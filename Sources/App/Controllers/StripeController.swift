@@ -4,23 +4,23 @@ import Stripe
 final class StripeController: RouteCollection {
 	func boot(router: Router) throws {
 		let stripeRoute = router.grouped("stripe")
-		stripeRoute.post(CustomerCreateData.self, at: "customers", use: createCustomer)
-		stripeRoute.post(ChargeCreateData.self, at: "charges", use: createCharge)
-		stripeRoute.post(EphemeralKeyCreateData.self, at: "ephemeral_keys", use: createEphemeralKey)
+		stripeRoute.post(CreateCustomerData.self, at: "customers", use: createCustomer)
+		stripeRoute.post(CreateChargeData.self, at: "charges", use: createCharge)
+		stripeRoute.post(CreateEphemeralKeyData.self, at: "ephemeral_keys", use: createEphemeralKey)
 	}
 	
 	func stripeClient(_ req: Request) throws -> StripeClient {
 		return try req.make(StripeClient.self)
 	}
 	
-	func createCustomer(_ req: Request, data: CustomerCreateData)
+	func createCustomer(_ req: Request, data: CreateCustomerData)
 		throws -> Future<StripeCustomer> {
 		return try stripeClient(req).customer.create(
 			email: data.email
 		)
 	}
 	
-	func createCharge(_ req: Request, data: ChargeCreateData)
+	func createCharge(_ req: Request, data: CreateChargeData)
 		throws -> Future<StripeCharge> {
 		return try stripeClient(req).charge.create(
 			amount: data.amount,
@@ -30,7 +30,7 @@ final class StripeController: RouteCollection {
 		)
 	}
 	
-	func createEphemeralKey(_ req: Request, data: EphemeralKeyCreateData)
+	func createEphemeralKey(_ req: Request, data: CreateEphemeralKeyData)
 		throws -> Future<StripeEphemeralKey> {
 		return try stripeClient(req).ephemeralKey.create(
 			customer: data.customer,
@@ -39,11 +39,11 @@ final class StripeController: RouteCollection {
 	}
 }
 
-struct CustomerCreateData: Content {
+struct CreateCustomerData: Content {
 	let email: String?
 }
 
-struct ChargeCreateData: Content {
+struct CreateChargeData: Content {
 	/// In cents.
 	let amount: Int
 	/// Required if provided source requires customer. Will charge customer's default source if no source provided.
@@ -51,7 +51,7 @@ struct ChargeCreateData: Content {
 	let source: String?
 }
 
-struct EphemeralKeyCreateData: Content {
+struct CreateEphemeralKeyData: Content {
 	let customer: String
 	let version: String?
 }

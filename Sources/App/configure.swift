@@ -25,7 +25,12 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	try services.register(StripeProvider())
 	
 	// Configure PostgreSQL database.
-	let postgresConfig = PostgreSQLDatabaseConfig(hostname: "localhost", port: 5432, username: "natanel", database: "")
+	let postgresConfig = PostgreSQLDatabaseConfig(
+		hostname: "localhost",
+		port: 5432,
+		username: "natanel",
+		database: "sammys"
+	)
 	let postgres = PostgreSQLDatabase(config: postgresConfig)
 	
 	var databases = DatabasesConfig()
@@ -33,5 +38,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	services.register(databases)
 	
 	var migrations = MigrationConfig()
+	migrations.add(model: Category.self, database: .psql)
+	//migrations.add(migration: AddDefaultData.self, database: .psql)
 	services.register(migrations)
 }
