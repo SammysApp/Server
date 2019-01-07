@@ -13,6 +13,7 @@ final class Category: PostgreSQLUUIDModel {
 }
 
 extension Category: Content {}
+extension Category: Parameter {}
 extension Category: Migration {}
 
 extension Category {
