@@ -16,6 +16,10 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	middlewares.use(ErrorMiddleware.self)
     services.register(middlewares)
 	
+	var commandConfig = CommandConfig.default()
+	commandConfig.useFluentCommands()
+	services.register(commandConfig)
+	
 	// Configure Stripe.
 	let stripeCofig = StripeConfig(
 		productionKey: AppSecrets.Stripe.liveKey,

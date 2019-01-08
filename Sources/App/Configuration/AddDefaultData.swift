@@ -2,7 +2,7 @@ import Vapor
 import FluentPostgreSQL
 
 class CategoryData: Codable {
-	let id = Category.ID()
+	let id: Category.ID
 	let name: String
 	let subcategories: [CategoryData]?
 }

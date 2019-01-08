@@ -1,31 +1,40 @@
 [
   {
+    "id": "1e35acdf-f18d-4121-adfd-0a269c0b3a7e",
     "name": "Salad",
     "subcategories": [
       {
-        "name": "Custom Salads",
+        "id": "d61e1f68-4250-499b-bdbc-ed351300ac33",
+        "name": "Build a Salad",
         "subcategories": [
           {
+            "id": "477d3904-7ad5-4e1f-a919-449cd000229a",
             "name": "Size"
           },
           {
+            "id": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
             "name": "Lettuce"
           },
           {
+            "id": "6294b34f-9e58-4a75-95fb-c828e5526c6c",
             "name": "Vegetables"
           },
           {
+            "id": "8cc1800b-f97e-4a17-a83a-2d8904837a5e",
             "name": "Dressings"
           },
           {
+            "id": "942aea85-8743-4cc5-be61-f3ce65954ae3",
             "name": "Toppings"
           },
           {
+            "id": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
             "name": "Extras"
           }
         ]
       },
       {
+        "id": "446c40c5-3aee-4ca4-a19c-b26fb813fff5",
         "name": "Standard Salads"
       }
     ]
