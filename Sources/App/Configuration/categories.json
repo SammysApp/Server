@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Salad",
+    "subcategories": [
+      {
+        "name": "Custom Salads",
+        "subcategories": [
+          {
+            "name": "Size"
+          },
+          {
+            "name": "Lettuce"
+          },
+          {
+            "name": "Vegetables"
+          },
+          {
+            "name": "Dressings"
+          },
+          {
+            "name": "Toppings"
+          },
+          {
+            "name": "Extras"
+          }
+        ]
+      },
+      {
+        "name": "Standard Salads"
+      }
+    ]
+  }
+]

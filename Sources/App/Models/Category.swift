@@ -6,7 +6,8 @@ final class Category: PostgreSQLUUIDModel {
 	var name: String
 	var parentID: Category.ID?
 	
-	init(name: String, parentID: Category.ID? = nil) {
+	init(id: UUID? = nil, name: String, parentID: Category.ID? = nil) {
+		self.id = id
 		self.name = name
 		self.parentID = parentID
 	}
