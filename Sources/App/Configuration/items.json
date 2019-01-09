@@ -1,10 +1,222 @@
 [
   {
+    "id": "25b4b563-ace5-4e52-b93d-c47283869641",
+    "name": "Family"
+  },
+  {
+    "id": "4f74dd77-9f50-49ea-acae-406b8e84280f",
+    "name": "Junior"
+  },
+  {
+    "id": "ae6af970-ef15-4234-a629-4afd0977e7bf",
+    "name": "Large"
+  },
+  {
+    "id": "567eb6f7-5cce-404c-bdeb-307974f03c40",
+    "name": "Party"
+  },
+  {
+    "id": "36b15e05-d7a6-4893-8335-4443f1f662e1",
+    "name": "Regular"
+  },
+  {
+    "id": "a07350ac-11e0-45ec-b40f-f87c690e1e59",
+    "name": "Arugula"
+  },
+  {
+    "id": "00cb976d-e075-4831-945f-88cbf2a85b48",
+    "name": "Baby Kale"
+  },
+  {
+    "id": "d7ea9b8e-2e0a-4e31-8401-9c63387d5672",
+    "name": "Baby Spinach"
+  },
+  {
+    "id": "44f1e1c6-0150-4d94-901d-122807c2dda3",
+    "name": "Iceberg"
+  },
+  {
+    "id": "3ae607a0-8602-4db1-85b2-6b310505ae94",
+    "name": "Mesclun"
+  },
+  {
+    "id": "60c26ab1-df95-4ae9-a64d-e489d67a03c7",
+    "name": "Romaine"
+  },
+  {
     "id": "af50fdbd-eef1-48d1-87af-af3dddf27a3d",
     "name": "Avocado"
   },
   {
+    "id": "20ad2bb1-bf6f-472d-8b0c-74f272b9c95d",
+    "name": "Beets"
+  },
+  {
+    "id": "21436b50-7df7-4658-9881-34bce7cab910",
+    "name": "Butternut Squash (Roasted)"
+  },
+  {
+    "id": "8ac3b63d-a5f4-4596-99d6-9b158233acec",
+    "name": "Celery"
+  },
+  {
+    "id": "48e80fce-bda7-4f31-a65c-854afca7b996",
+    "name": "Chick Peas"
+  },
+  {
+    "id": "702b7882-bc5a-4576-8cda-026ba6158277",
+    "name": "Corn (Baby)"
+  },
+  {
+    "id": "2f3c6120-f6ff-4e0b-84e8-4b40c929edea",
+    "name": "Corn (Canned)"
+  },
+  {
+    "id": "311b4d42-c22e-43ca-833c-aff23bd1df49",
+    "name": "Corn (Fresh)"
+  },
+  {
     "id": "231894e1-6bad-4074-8a41-1524755310c9",
     "name": "Cucumber"
+  },
+  {
+    "id": "876ea7ec-eb5a-44b8-ae57-f8ca011a35dc",
+    "name": "Egg (Hard Boiled)"
+  },
+  {
+    "id": "8897f89a-3dd7-4f24-9e8a-5db59defbfc7",
+    "name": "Eggplant (Roasted)"
+  },
+  {
+    "id": "b6858e2a-e725-478a-9ea7-ff8f168bb843",
+    "name": "Egg Whites"
+  },
+  {
+    "id": "5d15c1ba-c483-4e2f-9aea-0eef391784bd",
+    "name": "Hearts of Palm"
+  },
+  {
+    "id": "44dee71b-e831-4d33-92d7-34368a08393c",
+    "name": "Jicama"
+  },
+  {
+    "id": "428fe2e4-29cb-4782-a244-aca1865a8ca7",
+    "name": "Mandarin Orange"
+  },
+  {
+    "id": "edc10d27-c47e-4656-8f4f-1259736f3bc2",
+    "name": "Mango"
+  },
+  {
+    "id": "408b3109-55c1-45f3-b86f-f012568bc16d",
+    "name": "Mushrooms"
+  },
+  {
+    "id": "8a87c352-a9dd-4b13-87cd-f98e1333fd25",
+    "name": "Olives (Black)"
+  },
+  {
+    "id": "4597f977-9e15-47b1-b01c-ce81300a3a97",
+    "name": "Olives (Green)"
+  },
+  {
+    "id": "8e0451d3-1ffb-4082-af33-f079b3e4622d",
+    "name": "Pepper (Green)"
+  },
+  {
+    "id": "1f9071eb-300d-4863-8c60-07f43559c9e4",
+    "name": "Pepper (Mixed Colors)"
+  },
+  {
+    "id": "6769b68f-c00b-41f1-8e1e-a41e780b748e",
+    "name": "Pepper (Red)"
+  },
+  {
+    "id": "7e86708b-0ac5-4a77-a502-e4f1ae0b8d46",
+    "name": "Pepper (Red, Roasted)"
+  },
+  {
+    "id": "9821dc09-eb29-4bee-b63e-9a1ecbeac3f2",
+    "name": "Pickles"
+  },
+  {
+    "id": "fd9a8332-2e1a-49e3-b124-446966f336b5",
+    "name": "Portobello Mushrooms (Roasted)"
+  },
+  {
+    "id": "01d684d0-6ccb-4dd5-89b1-491191837e15",
+    "name": "Raddish"
+  },
+  {
+    "id": "074ee085-99ce-46f4-8178-19103bffa4b6",
+    "name": "Red Beans"
+  },
+  {
+    "id": "aaaa945c-d0da-4acb-bd0f-d0535cf2d1c0",
+    "name": "Red Onion"
+  },
+  {
+    "id": "c5a1c43c-11ff-40bb-91b9-c4565900fcc4",
+    "name": "Scallion"
+  },
+  {
+    "id": "3caf4097-066e-457b-9e59-980e7c539d56",
+    "name": "Shredded Cabbage"
+  },
+  {
+    "id": "fb713652-d447-446c-a8f8-ec284c9ff183",
+    "name": "Shredded Carrots"
+  },
+  {
+    "id": "a9c3c7d1-c379-4095-b7d0-bc8c64e7fbde",
+    "name": "Snow Peas"
+  },
+  {
+    "id": "da39fde6-8c39-4742-84f1-54175739ce98",
+    "name": "Sprouts"
+  },
+  {
+    "id": "b2d1a441-cd58-44b2-a567-f2884f07e7f7",
+    "name": "Strawberries"
+  },
+  {
+    "id": "dc15e9c7-ee46-489a-8841-f89ab35b0c91",
+    "name": "String Beans"
+  },
+  {
+    "id": "f8a5d980-f6dd-44e7-801f-92bfe0f4e6fe",
+    "name": "Squash"
+  },
+  {
+    "id": "caeb28ab-6027-4445-a357-79d69ad163d8",
+    "name": "Sweet Potatoes (Roasted)"
+  },
+  {
+    "id": "505790b1-8c77-46e9-8e35-69f195daa2e1",
+    "name": "Tomatoes (Cherry)"
+  },
+  {
+    "id": "698671a1-3b90-4a6b-9d33-f1f85744b546",
+    "name": "Tomatoes (Regular)"
+  },
+  {
+    "id": "5f2ba685-b923-48a2-8229-1c65fe38bf6b",
+    "name": "Tomatoes (Sun Dried)"
+  },
+  {
+    "id": "2b62a3c5-2619-44c0-99f9-bf8b4aff9be3",
+    "name": "Water Chestnuts"
+  },
+  {
+    "id": "11006057-751d-46ed-9dda-9559cf0d6172",
+    "name": "Yellow Squash (Roasted)"
+  },
+  {
+    "id": "ff27bbcd-711f-4f95-abcd-ae97db75ae5f",
+    "name": "Zucchini"
+  },
+  {
+    "id": "6be1dd14-3bdd-4dcc-93e0-c1f9789e6321",
+    "name": "Zucchini (Roasted)"
   }
 ]
