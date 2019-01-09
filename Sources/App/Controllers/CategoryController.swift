@@ -2,12 +2,12 @@ import Vapor
 
 final class CategoryController: RouteCollection {
 	func boot(router: Router) throws {
-		let categoryRoute = router.grouped("categories")
+		let categoriesRoute = router.grouped("categories")
 		
-		categoryRoute.get(use: allCategories)
-		categoryRoute.get(Category.parameter, "subcategories", use: allSubcategories)
+		categoriesRoute.get(use: allCategories)
+		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		
-		categoryRoute.post(Category.self, use: save)
+		categoriesRoute.post(Category.self, use: save)
 	}
 	
 	func allCategories(_ req: Request) -> Future<[Category]> {

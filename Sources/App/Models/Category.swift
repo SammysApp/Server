@@ -2,11 +2,11 @@ import Vapor
 import FluentPostgreSQL
 
 final class Category: PostgreSQLUUIDModel {
-	var id: UUID?
+	var id: Category.ID?
 	var name: String
 	var parentID: Category.ID?
 	
-	init(id: UUID? = nil, name: String, parentID: Category.ID? = nil) {
+	init(id: Category.ID? = nil, name: String, parentID: Category.ID? = nil) {
 		self.id = id
 		self.name = name
 		self.parentID = parentID
@@ -25,4 +25,8 @@ extension Category {
 	var subcategories: Children<Category, Category> {
 		return children(\.parentID)
 	}
+}
+
+extension Category {
+	var items: Siblings<Category, Item, CategoryItem> { return siblings() }
 }
