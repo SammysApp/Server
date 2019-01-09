@@ -17,7 +17,11 @@
           },
           {
             "id": "6294b34f-9e58-4a75-95fb-c828e5526c6c",
-            "name": "Vegetables"
+            "name": "Vegetables",
+            "items": [
+              "af50fdbd-eef1-48d1-87af-af3dddf27a3d",
+              "231894e1-6bad-4074-8a41-1524755310c9"
+            ]
           },
           {
             "id": "8cc1800b-f97e-4a17-a83a-2d8904837a5e",

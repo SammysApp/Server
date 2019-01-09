@@ -6,6 +6,7 @@ final class CategoryController: RouteCollection {
 		
 		categoriesRoute.get(use: allCategories)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
+		categoriesRoute.get(Category.parameter, "items", use: allItems)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
@@ -17,6 +18,11 @@ final class CategoryController: RouteCollection {
 	func allSubcategories(_ req: Request) throws -> Future<[Category]> {
 		return try req.parameters.next(Category.self)
 			.flatMap { try $0.subcategories.query(on: req).all() }
+	}
+	
+	func allItems(_ req: Request) throws -> Future<[Item]> {
+		return try req.parameters.next(Category.self)
+			.flatMap { try $0.items.query(on: req).all() }
 	}
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {

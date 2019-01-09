@@ -1,23 +1,24 @@
 import Vapor
 import FluentPostgreSQL
 
-struct CategoryData: Codable {
-	let id: Category.ID
-	let name: String
-	let subcategories: [CategoryData]?
-}
-
 struct ItemData: Codable {
 	let id: Item.ID
 	let name: String
+}
+
+struct CategoryData: Codable {
+	let id: Category.ID
+	let name: String
+	let items: [Item.ID]?
+	let subcategories: [CategoryData]?
 }
 
 struct AddDefaultData: PostgreSQLMigration {
 	static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
 		do {
 			return Future<Void>.andAll([
-				create(try categoriesData(), on: conn),
-				create(try itemsData(), on: conn)
+				create(try itemsData(), on: conn),
+				create(try categoriesData(), on: conn)
 			], eventLoop: conn.eventLoop)
 		}
 		catch { return conn.future(error: error) }
@@ -30,28 +31,6 @@ struct AddDefaultData: PostgreSQLMigration {
 	private static var baseFilesURL: URL {
 		return URL(fileURLWithPath: DirectoryConfig.detect().workDir)
 			.appendingPathComponent("Sources/App/Configuration")
-	}
-	
-	// Add categories
-	private static func categoriesData() throws -> [CategoryData] {
-		let categoriesDataURL = baseFilesURL.appendingPathComponent("categories.json")
-		return try JSONDecoder().decode([CategoryData].self, from: Data(contentsOf: categoriesDataURL))
-	}
-
-	private static func category(for categoryData: CategoryData, parentID: Category.ID?) -> Category {
-		return Category(id: categoryData.id, name: categoryData.name, parentID: parentID)
-	}
-
-	private static func create(_ categoriesData: [CategoryData]?, parentID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
-		guard let futures = categoriesData?
-			.map({ create($0, parentID: parentID, on: conn) })
-			else { return .done(on: conn) }
-		return Future<Void>.andAll(futures, eventLoop: conn.eventLoop)
-	}
-	
-	private static func create(_ categoryData: CategoryData, parentID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
-		return category(for: categoryData, parentID: parentID).create(on: conn)
-			.then { create(categoryData.subcategories, parentID: $0.id, on: conn) }
 	}
 	
 	// Add items
@@ -70,4 +49,44 @@ struct AddDefaultData: PostgreSQLMigration {
 			eventLoop: conn.eventLoop
 		)
 	}
+	
+	// Add categories
+	private static func categoriesData() throws -> [CategoryData] {
+		let categoriesDataURL = baseFilesURL.appendingPathComponent("categories.json")
+		return try JSONDecoder().decode([CategoryData].self, from: Data(contentsOf: categoriesDataURL))
+	}
+	
+	private static func category(for categoryData: CategoryData, parentID: Category.ID?) -> Category {
+		return Category(id: categoryData.id, name: categoryData.name, parentID: parentID)
+	}
+	
+	private static func create(_ categoriesData: [CategoryData]?, parentID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
+		guard let futures = categoriesData?
+			.map({ create($0, parentID: parentID, on: conn) })
+			else { return .done(on: conn) }
+		return Future<Void>.andAll(futures, eventLoop: conn.eventLoop)
+	}
+	
+	private static func create(_ categoryData: CategoryData, parentID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
+		return category(for: categoryData, parentID: parentID).create(on: conn)
+			.then { attach(categoryData.items, to: $0, on: conn).transform(to: $0) }
+			.then { create(categoryData.subcategories, parentID: $0.id, on: conn) }
+	}
+	
+	private static func attach(_ itemIDs: [Item.ID]?, to category: Category, on conn: PostgreSQLConnection) -> Future<Void> {
+		guard let ids = itemIDs else { return .done(on: conn) }
+		return Future<Void>.andAll(
+			ids.map { attach($0, to: category, on: conn).transform(to: ()) },
+			eventLoop: conn.eventLoop
+		)
+	}
+	
+	private static func attach(_ itemID: Item.ID, to category: Category, on conn: PostgreSQLConnection) -> Future<CategoryItem> {
+		return Item.find(itemID, on: conn).unwrap(or: AddDefaultDataError.cantFindItem)
+			.then { category.items.attach($0, on: conn) }
+	}
+}
+
+enum AddDefaultDataError: Error {
+	case cantFindItem
 }
