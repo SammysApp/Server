@@ -218,5 +218,125 @@
   {
     "id": "6be1dd14-3bdd-4dcc-93e0-c1f9789e6321",
     "name": "Zucchini (Roasted)"
+  },
+  {
+    "id": "e824e3c8-0c49-43a5-8a4a-e27bfe02c18f",
+    "name": "Almonds (Caramelized)"
+  },
+  {
+    "id": "b9ca78d9-d021-48e9-9cd8-1f9873e537d1",
+    "name": "Almonds (Plain)"
+  },
+  {
+    "id": "bc6e79c5-8b95-4498-98b1-0e49c1d2e71f",
+    "name": "Almonds (Salted)"
+  },
+  {
+    "id": "0e3220af-328d-4ea3-8294-25a195bb2377",
+    "name": "Bacos"
+  },
+  {
+    "id": "e6388206-299f-4a6a-8c14-3c6fd263f05a",
+    "name": "Bagel Chips"
+  },
+  {
+    "id": "7187a3bd-a67f-4535-98a2-f2a65250b46b",
+    "name": "Barley"
+  },
+  {
+    "id": "57707b75-0f59-4501-be16-0a3df0d7320f",
+    "name": "Cantaloupe"
+  },
+  {
+    "id": "85891138-c812-4e77-b12e-bde9e25e92c4",
+    "name": "Cashews"
+  },
+  {
+    "id": "1ac802c8-56fa-4988-a72a-2a88f1cf294d",
+    "name": "Chinese Noodles"
+  },
+  {
+    "id": "0f18a6dc-7ca2-4e15-8338-6ec386823208",
+    "name": "Couscous"
+  },
+  {
+    "id": "3980bd82-0dde-427b-9580-ffee6b156733",
+    "name": "Craisins"
+  },
+  {
+    "id": "5194e92b-0da2-41d5-b90d-5899f998cc8a",
+    "name": "Croutons"
+  },
+  {
+    "id": "f49cd11c-5d06-40eb-ae3e-7b3e9d6734c4",
+    "name": "Dried Blueberries"
+  },
+  {
+    "id": "016e369b-45b4-497a-af7b-2f3964a901f1",
+    "name": "Farro"
+  },
+  {
+    "id": "78636f77-4235-4bb0-a68c-f88c6fb05aab",
+    "name": "Granola"
+  },
+  {
+    "id": "3b9f71ef-f700-43a0-9add-f4bb0db9e36c",
+    "name": "Jalapenõ Peppers"
+  },
+  {
+    "id": "3bc90407-e4d7-41cf-ac4f-9e985738fb73",
+    "name": "Orzo"
+  },
+  {
+    "id": "7bb224ab-ebc5-48ae-9615-1f800420f183",
+    "name": "Pear"
+  },
+  {
+    "id": "5bbc15f8-0c82-4320-b9e1-50fdd65959cc",
+    "name": "Pecan Nuts"
+  },
+  {
+    "id": "59456af0-855c-448a-828b-3e5d3b09c21b",
+    "name": "Pine Nuts"
+  },
+  {
+    "id": "086ed673-6ef4-411f-a181-c175345e9911",
+    "name": "Pistachios"
+  },
+  {
+    "id": "f1105669-e11d-4f41-9e1f-9298752e05d2",
+    "name": "Pomegranate"
+  },
+  {
+    "id": "d7ba7429-e822-45de-a51e-5c49ee922ab8",
+    "name": "Quinoa"
+  },
+  {
+    "id": "5afb7c56-3f23-4003-94f2-e2343e4eeb62",
+    "name": "Raisins"
+  },
+  {
+    "id": "e47b75f1-8749-4528-863c-41b17cf792cf",
+    "name": "Sesame"
+  },
+  {
+    "id": "712e5550-0131-4484-ad0f-d8fbe2af150d",
+    "name": "Sun Flower Seeds"
+  },
+  {
+    "id": "ec0d1dfd-e46d-4a0d-88aa-ff72b6876721",
+    "name": "Terra Chips"
+  },
+  {
+    "id": "b3b8a5ca-dbc1-4d8b-9abe-b2892bdd3024",
+    "name": "Tortilla Chips"
+  },
+  {
+    "id": "f6ce227f-bce0-48c4-a4bd-48910a939992",
+    "name": "Walnuts"
+  },
+  {
+    "id": "1d2f5c94-b857-49c9-94d1-8c8934ff8831",
+    "name": "Wheat Berry"
   }
 ]
