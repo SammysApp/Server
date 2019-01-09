@@ -1,10 +1,12 @@
 import Vapor
+import FluentPostgreSQL
 
 final class CategoryController: RouteCollection {
 	func boot(router: Router) throws {
 		let categoriesRoute = router.grouped("categories")
 		
 		categoriesRoute.get(use: allCategories)
+		categoriesRoute.get("roots", use: allRootCategories)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
 		
@@ -13,6 +15,10 @@ final class CategoryController: RouteCollection {
 	
 	func allCategories(_ req: Request) -> Future<[Category]> {
 		return Category.query(on: req).all()
+	}
+	
+	func allRootCategories(_ req: Request) -> Future<[Category]> {
+		return Category.query(on: req).filter(\.parentID == nil).all()
 	}
 	
 	func allSubcategories(_ req: Request) throws -> Future<[Category]> {
