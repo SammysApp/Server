@@ -3,7 +3,7 @@ import FluentPostgreSQL
 
 final class CategoryController: RouteCollection {
 	func boot(router: Router) throws {
-		let categoriesRoute = router.grouped("categories")
+		let categoriesRoute = router.grouped("\(AppConstants.version)/categories")
 		
 		categoriesRoute.get(use: allCategories)
 		categoriesRoute.get("roots", use: allRootCategories)

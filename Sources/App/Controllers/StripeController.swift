@@ -3,7 +3,8 @@ import Stripe
 
 final class StripeController: RouteCollection {
 	func boot(router: Router) throws {
-		let stripeRoute = router.grouped("stripe")
+		let stripeRoute = router.grouped("\(AppConstants.version)/stripe")
+		
 		stripeRoute.post(CreateCustomerData.self, at: "customers", use: createCustomer)
 		stripeRoute.post(CreateChargeData.self, at: "charges", use: createCharge)
 		stripeRoute.post(CreateEphemeralKeyData.self, at: "ephemeral_keys", use: createEphemeralKey)

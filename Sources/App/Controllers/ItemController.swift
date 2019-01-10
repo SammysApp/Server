@@ -2,7 +2,7 @@ import Vapor
 
 final class ItemController: RouteCollection {
 	func boot(router: Router) throws {
-		let itemsRoute = router.grouped("items")
+		let itemsRoute = router.grouped("\(AppConstants.version)/items")
 		
 		itemsRoute.get(use: allItems)
 	}
