@@ -33,7 +33,7 @@ struct AddDefaultData: PostgreSQLMigration {
 			.appendingPathComponent("Sources/App/Configuration")
 	}
 	
-	// Add items
+	// Add items.
 	private static func itemsData() throws -> [ItemData] {
 		let itemsDataURL = baseFilesURL.appendingPathComponent("items.json")
 		return try JSONDecoder().decode([ItemData].self, from: Data(contentsOf: itemsDataURL))
@@ -50,7 +50,7 @@ struct AddDefaultData: PostgreSQLMigration {
 		)
 	}
 	
-	// Add categories
+	// Add categories.
 	private static func categoriesData() throws -> [CategoryData] {
 		let categoriesDataURL = baseFilesURL.appendingPathComponent("categories.json")
 		return try JSONDecoder().decode([CategoryData].self, from: Data(contentsOf: categoriesDataURL))

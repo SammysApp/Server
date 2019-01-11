@@ -1,5 +1,6 @@
 import Vapor
 import FluentPostgreSQL
+import MongoSwift
 
 final class CategoryController: RouteCollection {
 	func boot(router: Router) throws {
@@ -11,6 +12,19 @@ final class CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
 		
 		categoriesRoute.post(Category.self, use: save)
+		categoriesRoute.post(Category.parameter, "items", Item.parameter, use: test)
+	}
+	
+	func mongoClient(_ req: Request) throws -> MongoClient {
+		return try req.make(MongoClient.self)
+	}
+	
+	func mongoDatabase(_ req: Request) throws -> MongoDatabase {
+		return try mongoClient(req).db(AppConstants.MongoDB.database)
+	}
+	
+	func itemsCollection(_ req: Request) throws -> MongoCollection<ItemDocument> {
+		return try mongoDatabase(req).collection(AppConstants.MongoDB.itemsCollection, withType: ItemDocument.self)
 	}
 	
 	func allCategories(_ req: Request) -> Future<[Category]> {

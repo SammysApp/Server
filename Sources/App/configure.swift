@@ -1,5 +1,6 @@
 import Vapor
 import FluentPostgreSQL
+import MongoSwift
 import Stripe
 
 /// Called before application initializes.
@@ -20,6 +21,27 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	commandConfig.useFluentCommands()
 	services.register(commandConfig)
 	
+	// Configure PostgreSQL.
+	let postgresConfig = PostgreSQLDatabaseConfig(
+		hostname: AppConstants.PostgreSQL.hostname,
+		port: AppConstants.PostgreSQL.port,
+		username: AppConstants.PostgreSQL.username,
+		database: AppConstants.PostgreSQL.database,
+		password: AppSecrets.PostgreSQL.password
+	)
+	let postgres = PostgreSQLDatabase(config: postgresConfig)
+	
+	var databases = DatabasesConfig()
+	databases.add(database: postgres, as: .psql)
+	services.register(databases)
+	
+	// Configure MongoDB.
+	MongoSwift.initialize()
+	let client = try MongoClient(connectionString: AppConstants.MongoDB.connectionString)
+	_ = try? client.db(AppConstants.MongoDB.database)
+		.createCollection(AppConstants.MongoDB.itemsCollection)
+	services.register(client)
+	
 	// Configure Stripe.
 	let stripeCofig = StripeConfig(
 		productionKey: AppSecrets.Stripe.liveKey,
@@ -28,19 +50,6 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	services.register(stripeCofig)
 	try services.register(StripeProvider())
 	
-	// Configure PostgreSQL database.
-	let postgresConfig = PostgreSQLDatabaseConfig(
-		hostname: "localhost",
-		port: 5432,
-		username: "natanel",
-		database: "sammys"
-	)
-	let postgres = PostgreSQLDatabase(config: postgresConfig)
-	
-	var databases = DatabasesConfig()
-	databases.add(database: postgres, as: .psql)
-	services.register(databases)
-	
 	var migrations = MigrationConfig()
 	migrations.add(model: Category.self, database: .psql)
 	migrations.add(model: Item.self, database: .psql)
@@ -48,3 +57,5 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	migrations.add(migration: AddDefaultData.self, database: .psql)
 	services.register(migrations)
 }
+
+extension MongoClient: Service {}
