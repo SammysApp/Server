@@ -13,6 +13,13 @@ struct CategoryData: Codable {
 	let subcategories: [CategoryData]?
 }
 
+struct CategoryItemData: Codable {
+	let category: Category.ID
+	let item: Item.ID
+	let description: String?
+	let price: Double?
+}
+
 struct AddDefaultData: PostgreSQLMigration {
 	static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
 		do {
@@ -56,6 +63,11 @@ struct AddDefaultData: PostgreSQLMigration {
 		return try JSONDecoder().decode([CategoryData].self, from: Data(contentsOf: categoriesDataURL))
 	}
 	
+	private static let categoryItemsData: [CategoryItemData] = {
+		let categoryItemsDataURL = baseFilesURL.appendingPathComponent("category_items.json")
+		return (try? JSONDecoder().decode([CategoryItemData].self, from: Data(contentsOf: categoryItemsDataURL))) ?? []
+	}()
+	
 	private static func category(for categoryData: CategoryData, parentID: Category.ID?) -> Category {
 		return Category(id: categoryData.id, name: categoryData.name, parentID: parentID)
 	}
@@ -82,8 +94,19 @@ struct AddDefaultData: PostgreSQLMigration {
 	}
 	
 	private static func attach(_ itemID: Item.ID, to category: Category, on conn: PostgreSQLConnection) -> Future<CategoryItem> {
-		return Item.find(itemID, on: conn).unwrap(or: AddDefaultDataError.cantFindItem)
+		return Item.find(itemID, on: conn)
+			.unwrap(or: AddDefaultDataError.cantFindItem)
 			.then { category.items.attach($0, on: conn) }
+			.flatMap { categoryItem in
+				guard let categoryItemData = categoryItemsData.first(where: { $0.category == categoryItem.categoryID && $0.item == categoryItem.itemID }) else { return conn.future(categoryItem) }
+				return try update(categoryItem, with: categoryItemData, on: conn)
+			}
+	}
+	
+	private static func update(_ categoryItem: CategoryItem, with data: CategoryItemData, on conn: PostgreSQLConnection) throws -> Future<CategoryItem> {
+		categoryItem.description = data.description
+		categoryItem.price = data.price
+		return categoryItem.save(on: conn)
 	}
 }
 
