@@ -12,19 +12,6 @@ final class CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
 		
 		categoriesRoute.post(Category.self, use: save)
-		categoriesRoute.post(Category.parameter, "items", Item.parameter, use: test)
-	}
-	
-	func mongoClient(_ req: Request) throws -> MongoClient {
-		return try req.make(MongoClient.self)
-	}
-	
-	func mongoDatabase(_ req: Request) throws -> MongoDatabase {
-		return try mongoClient(req).db(AppConstants.MongoDB.database)
-	}
-	
-	func itemsCollection(_ req: Request) throws -> MongoCollection<ItemDocument> {
-		return try mongoDatabase(req).collection(AppConstants.MongoDB.itemsCollection, withType: ItemDocument.self)
 	}
 	
 	func allCategories(_ req: Request) -> Future<[Category]> {
@@ -40,12 +27,32 @@ final class CategoryController: RouteCollection {
 			.flatMap { try $0.subcategories.query(on: req).all() }
 	}
 	
-	func allItems(_ req: Request) throws -> Future<[Item]> {
+	func allItems(_ req: Request) throws -> Future<[GetItem]> {
+		let mongoClient = try req.make(MongoClient.self)
 		return try req.parameters.next(Category.self)
-			.flatMap { try $0.items.query(on: req).all() }
+			.flatMap { try $0.items.query(on: req).all().and(result: $0) }
+			.map { items, category in
+				try items.map { try GetItem(item: $0, itemDoc: self.itemDoc(for: $0, in: category, client: mongoClient)) }
+			}
 	}
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {
 		return category.save(on: req)
+	}
+	
+	// MongoDB methods
+	func mongoDatabase(_ client: MongoClient) throws -> MongoDatabase {
+		return try client.db(AppConstants.MongoDB.database)
+	}
+	
+	func itemsCollection(_ client: MongoClient) throws -> MongoCollection<ItemDocument> {
+		return try mongoDatabase(client).collection(AppConstants.MongoDB.itemsCollection, withType: ItemDocument.self)
+	}
+	
+	func itemDoc(for item: Item, in category: Category, client: MongoClient) throws -> ItemDocument? {
+		return try itemsCollection(client).find([
+			ItemDocument.CodingKeys.category.rawValue: category.asBinary(),
+			ItemDocument.CodingKeys.item.rawValue: item.asBinary()
+		]).next()
 	}
 }

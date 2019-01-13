@@ -38,8 +38,13 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	// Configure MongoDB.
 	MongoSwift.initialize()
 	let client = try MongoClient(connectionString: AppConstants.MongoDB.connectionString)
-	_ = try? client.db(AppConstants.MongoDB.database)
-		.createCollection(AppConstants.MongoDB.itemsCollection)
+	let mongoDatabase = try client.db(AppConstants.MongoDB.database)
+	if try !mongoDatabase.listCollections()
+		.contains(where: { $0["name"] as? String == AppConstants.MongoDB.itemsCollection }) {
+		let collection = try mongoDatabase
+			.createCollection(AppConstants.MongoDB.itemsCollection)
+		try collection.createIndex([ItemDocument.CodingKeys.category.rawValue: 1, ItemDocument.CodingKeys.item.rawValue: 1])
+	}
 	services.register(client)
 	
 	// Configure Stripe.

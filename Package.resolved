@@ -68,9 +68,9 @@
         "package": "MongoSwift",
         "repositoryURL": "https://github.com/mongodb/mongo-swift-driver.git",
         "state": {
-          "branch": null,
-          "revision": "90c15c814968eba76e4dcc3146bf4b7fbe8d8cb1",
-          "version": "0.0.7"
+          "branch": "master",
+          "revision": "b924785a4f0abc8bc4b9d60f8397c52495af0050",
+          "version": null
         }
       },
       {
