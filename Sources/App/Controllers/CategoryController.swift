@@ -27,12 +27,28 @@ final class CategoryController: RouteCollection {
 			.flatMap { try $0.subcategories.query(on: req).all() }
 	}
 	
-	func allItems(_ req: Request) throws -> Future<[Item]> {
-		return try req.parameters.next(Category.self)
-			.flatMap { try $0.items.query(on: req).all() }
+	func allItems(_ req: Request) throws -> Future<[GetItem]> {
+		return try req.parameters.next(Category.self).map { $0.items }
+			.flatMap { try $0.query(on: req).all().and($0.pivots(on: req).all()) }
+			.map { try self.createGetItems(from: $0, categoryItems: $1) }
+	}
+	
+	func createGetItems(from items: [Item], categoryItems: [CategoryItem]) throws -> [GetItem] {
+		return try items.map { item in try self.createGetItem(from: item, categoryItem: categoryItems.first { $0.itemID == item.id }) }
+	}
+	
+	func createGetItem(from item: Item, categoryItem: CategoryItem? = nil) throws -> GetItem {
+		return GetItem(id: try item.requireID(), name: item.name, description: categoryItem?.description, price: categoryItem?.price)
 	}
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {
 		return category.save(on: req)
 	}
+}
+
+struct GetItem: Content {
+	let id: Item.ID
+	let name: String
+	let description: String?
+	let price: Double?
 }
