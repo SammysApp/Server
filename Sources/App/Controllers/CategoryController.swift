@@ -2,19 +2,7 @@ import Vapor
 import FluentPostgreSQL
 import MongoSwift
 
-final class CategoryController: RouteCollection {
-	func boot(router: Router) throws {
-		let categoriesRoute = router.grouped("\(AppConstants.version)/categories")
-		
-		categoriesRoute.get(use: allCategories)
-		categoriesRoute.get("roots", use: allRootCategories)
-		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
-		categoriesRoute.get(Category.parameter, "items", use: allItems)
-		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
-		
-		categoriesRoute.post(Category.self, use: save)
-	}
-	
+final class CategoryController {
 	func allCategories(_ req: Request) -> Future<[Category]> {
 		return Category.query(on: req).all()
 	}
@@ -55,6 +43,20 @@ final class CategoryController: RouteCollection {
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {
 		return category.save(on: req)
+	}
+}
+
+extension CategoryController: RouteCollection {
+	func boot(router: Router) throws {
+		let categoriesRoute = router.grouped("\(AppConstants.version)/categories")
+		
+		categoriesRoute.get(use: allCategories)
+		categoriesRoute.get("roots", use: allRootCategories)
+		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
+		categoriesRoute.get(Category.parameter, "items", use: allItems)
+		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
+		
+		categoriesRoute.post(Category.self, use: save)
 	}
 }
 

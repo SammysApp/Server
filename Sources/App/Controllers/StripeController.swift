@@ -2,14 +2,6 @@ import Vapor
 import Stripe
 
 final class StripeController: RouteCollection {
-	func boot(router: Router) throws {
-		let stripeRoute = router.grouped("\(AppConstants.version)/stripe")
-		
-		stripeRoute.post(CreateCustomerData.self, at: "customers", use: createCustomer)
-		stripeRoute.post(CreateChargeData.self, at: "charges", use: createCharge)
-		stripeRoute.post(CreateEphemeralKeyData.self, at: "ephemeral_keys", use: createEphemeralKey)
-	}
-	
 	func stripeClient(_ req: Request) throws -> StripeClient {
 		return try req.make(StripeClient.self)
 	}
@@ -37,6 +29,16 @@ final class StripeController: RouteCollection {
 			customer: data.customer,
 			apiVersion: data.version
 		)
+	}
+}
+
+extension StripeController: RouteCollection {
+	func boot(router: Router) throws {
+		let stripeRoute = router.grouped("\(AppConstants.version)/stripe")
+		
+		stripeRoute.post(CreateCustomerData.self, at: "customers", use: createCustomer)
+		stripeRoute.post(CreateChargeData.self, at: "charges", use: createCharge)
+		stripeRoute.post(CreateEphemeralKeyData.self, at: "ephemeral_keys", use: createEphemeralKey)
 	}
 }
 
