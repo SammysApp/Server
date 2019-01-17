@@ -1,7 +1,7 @@
 import Vapor
 import Stripe
 
-final class StripeController: RouteCollection {
+final class StripeController {
 	func stripeClient(_ req: Request) throws -> StripeClient {
 		return try req.make(StripeClient.self)
 	}

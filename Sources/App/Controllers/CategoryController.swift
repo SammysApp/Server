@@ -3,6 +3,22 @@ import FluentPostgreSQL
 import MongoSwift
 
 final class CategoryController {
+	func mongoDatabase(_ req: Request) throws -> MongoDatabase {
+		return try req.make(MongoClient.self).db(AppConstants.MongoDB.database)
+	}
+	
+	func categoryItemsCollection(_ req: Request) throws -> MongoCollection<CategoryItemDocument> {
+		return try mongoDatabase(req)
+			.collection(AppConstants.MongoDB.categoryItemsCollection, withType: CategoryItemDocument.self)
+	}
+	
+	func filter(category: Category, item: Item) throws -> Document {
+		return try [
+			CategoryItemDocument.CodingKeys.category.rawValue: category.asBinary(),
+			CategoryItemDocument.CodingKeys.item.rawValue: item.asBinary()
+		]
+	}
+	
 	func allCategories(_ req: Request) -> Future<[Category]> {
 		return Category.query(on: req).all()
 	}
@@ -31,14 +47,10 @@ final class CategoryController {
 	}
 	
 	func allModifiers(_ req: Request) throws -> Future<[CategoryItemDocument.Modifier]> {
-		let collection = try req.make(MongoClient.self).db(AppConstants.MongoDB.database)
-			.collection(AppConstants.MongoDB.categoryItemsCollection, withType: CategoryItemDocument.self)
+		let collection = try categoryItemsCollection(req)
 		return try req.parameters.next(Category.self)
 			.and(req.parameters.next(Item.self))
-			.map {
-				let doc: Document = try [CategoryItemDocument.CodingKeys.category.rawValue: $0.asBinary(), CategoryItemDocument.CodingKeys.item.rawValue: $1.asBinary()]
-				return try collection.find(doc).next()?.modifiers ?? []
-			}
+			.map { try collection.find(self.filter(category: $0, item: $1)).next()?.modifiers ?? [] }
 	}
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {
