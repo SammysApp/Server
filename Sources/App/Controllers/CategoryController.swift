@@ -10,6 +10,7 @@ final class CategoryController: RouteCollection {
 		categoriesRoute.get("roots", use: allRootCategories)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
+		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
@@ -39,6 +40,17 @@ final class CategoryController: RouteCollection {
 	
 	func createGetItem(from item: Item, categoryItem: CategoryItem? = nil) throws -> GetItem {
 		return GetItem(id: try item.requireID(), name: item.name, description: categoryItem?.description, price: categoryItem?.price)
+	}
+	
+	func allModifiers(_ req: Request) throws -> Future<[CategoryItemDocument.Modifier]> {
+		let collection = try req.make(MongoClient.self).db(AppConstants.MongoDB.database)
+			.collection(AppConstants.MongoDB.categoryItemsCollection, withType: CategoryItemDocument.self)
+		return try req.parameters.next(Category.self)
+			.and(req.parameters.next(Item.self))
+			.map {
+				let doc: Document = try [CategoryItemDocument.CodingKeys.category.rawValue: $0.asBinary(), CategoryItemDocument.CodingKeys.item.rawValue: $1.asBinary()]
+				return try collection.find(doc).next()?.modifiers ?? []
+			}
 	}
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {

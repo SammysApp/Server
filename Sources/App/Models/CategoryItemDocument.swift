@@ -1,5 +1,5 @@
-import Foundation
 import MongoSwift
+import Vapor
 
 struct CategoryItemDocument: Codable {
 	var id: ObjectId?
@@ -28,3 +28,5 @@ struct CategoryItemDocument: Codable {
 		let price: Double?
 	}
 }
+
+extension CategoryItemDocument.Modifier: Content {}
