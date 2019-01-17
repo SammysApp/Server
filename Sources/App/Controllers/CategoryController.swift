@@ -30,7 +30,7 @@ final class CategoryController: RouteCollection {
 	func allItems(_ req: Request) throws -> Future<[GetItem]> {
 		return try req.parameters.next(Category.self).map { $0.items }
 			.flatMap { try $0.query(on: req).all().and($0.pivots(on: req).all()) }
-			.map { try self.createGetItems(from: $0, categoryItems: $1) }
+			.map { try self.createGetItems(from: $0, categoryItems: $1).sorted() }
 	}
 	
 	func createGetItems(from items: [Item], categoryItems: [CategoryItem]) throws -> [GetItem] {
@@ -51,4 +51,13 @@ struct GetItem: Content {
 	let name: String
 	let description: String?
 	let price: Double?
+}
+
+extension Array where Element == GetItem {
+	var isAllPriced: Bool { return allSatisfy { $0.price != nil } }
+	
+	func sorted() -> [GetItem] {
+		if isAllPriced { return sorted { $0.price! < $1.price! } }
+		else { return sorted { $0.name < $1.name } }
+	}
 }

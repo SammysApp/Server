@@ -39,12 +39,16 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	MongoSwift.initialize()
 	let client = try MongoClient(connectionString: AppConstants.MongoDB.connectionString)
 	let mongoDatabase = try client.db(AppConstants.MongoDB.database)
-	if try !mongoDatabase.listCollections()
-		.contains(where: { $0["name"] as? String == AppConstants.MongoDB.itemsCollection }) {
+	let currentCollections = try mongoDatabase.listCollections()
+	if !currentCollections.contains(named: AppConstants.MongoDB.categoryItemsCollection) {
 		let collection = try mongoDatabase
-			.createCollection(AppConstants.MongoDB.itemsCollection)
-		try collection.createIndex([ItemDocument.CodingKeys.category.rawValue: 1, ItemDocument.CodingKeys.item.rawValue: 1])
+			.createCollection(AppConstants.MongoDB.categoryItemsCollection)
+		try collection.createIndex([
+			CategoryItemDocument.CodingKeys.category.rawValue: 1,
+			CategoryItemDocument.CodingKeys.item.rawValue: 1
+		])
 	}
+	try AddDefaultData.addMongoData(mongoDatabase)
 	services.register(client)
 	
 	// Configure Stripe.
@@ -64,3 +68,9 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 }
 
 extension MongoClient: Service {}
+
+private extension MongoCursor where T == Document {
+	func contains(named name: String) -> Bool {
+		return contains { $0["name"] as? String == name }
+	}
+}

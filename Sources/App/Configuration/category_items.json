@@ -25,6 +25,78 @@
     "price": 49.95
   },
   {
+    "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
+    "item": "60c26ab1-df95-4ae9-a64d-e489d67a03c7",
+    "modifiers": [
+      {
+        "name": "Regular",
+      },
+      {
+        "name": "Chopped"
+      }
+    ]
+  },
+  {
+    "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
+    "item": "a07350ac-11e0-45ec-b40f-f87c690e1e59",
+    "modifiers": [
+      {
+        "name": "Regular",
+      },
+      {
+        "name": "Chopped"
+      }
+    ]
+  },
+  {
+    "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
+    "item": "00cb976d-e075-4831-945f-88cbf2a85b48",
+    "modifiers": [
+      {
+        "name": "Regular",
+      },
+      {
+        "name": "Chopped"
+      }
+    ]
+  },
+  {
+    "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
+    "item": "d7ea9b8e-2e0a-4e31-8401-9c63387d5672",
+    "modifiers": [
+      {
+        "name": "Regular",
+      },
+      {
+        "name": "Chopped"
+      }
+    ]
+  },
+  {
+    "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
+    "item": "44f1e1c6-0150-4d94-901d-122807c2dda3",
+    "modifiers": [
+      {
+        "name": "Regular",
+      },
+      {
+        "name": "Chopped"
+      }
+    ]
+  },
+  {
+    "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
+    "item": "3ae607a0-8602-4db1-85b2-6b310505ae94",
+    "modifiers": [
+      {
+        "name": "Regular",
+      },
+      {
+        "name": "Chopped"
+      }
+    ]
+  },
+  {
     "category": "942aea85-8743-4cc5-be61-f3ce65954ae3",
     "item": "59456af0-855c-448a-828b-3e5d3b09c21b",
     "price": 0.95

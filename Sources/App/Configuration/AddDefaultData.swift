@@ -1,48 +1,43 @@
 import Vapor
 import FluentPostgreSQL
+import MongoSwift
 
-struct ItemData: Codable {
+private struct ItemData: Codable {
 	let id: Item.ID
 	let name: String
 }
 
-struct CategoryData: Codable {
+private struct CategoryData: Codable {
 	let id: Category.ID
 	let name: String
 	let items: [Item.ID]?
 	let subcategories: [CategoryData]?
 }
 
-struct CategoryItemData: Codable {
+private struct CategoryItemData: Codable {
 	let category: Category.ID
 	let item: Item.ID
 	let description: String?
 	let price: Double?
+	let modifiers: [CategoryItemDocument.Modifier]?
 }
 
-struct AddDefaultData: PostgreSQLMigration {
-	static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
-		do {
-			return Future<Void>.andAll([
-				create(try itemsData(), on: conn),
-				create(try categoriesData(), on: conn)
-			], eventLoop: conn.eventLoop)
-		}
-		catch { return conn.future(error: error) }
-	}
-
-	static func revert(on conn: PostgreSQLConnection) -> Future<Void> {
-		return .done(on: conn)
+struct AddDefaultData {
+	private struct Constants {
+		static let baseFilesPath = "Sources/App/Configuration"
+		static let itemsFileName = "items.json"
+		static let categoriesFileName = "categories.json"
+		static let categoryItemsFileName = "category_items.json"
 	}
 	
 	private static var baseFilesURL: URL {
 		return URL(fileURLWithPath: DirectoryConfig.detect().workDir)
-			.appendingPathComponent("Sources/App/Configuration")
+			.appendingPathComponent(Constants.baseFilesPath)
 	}
 	
 	// Add items.
 	private static func itemsData() throws -> [ItemData] {
-		let itemsDataURL = baseFilesURL.appendingPathComponent("items.json")
+		let itemsDataURL = baseFilesURL.appendingPathComponent(Constants.itemsFileName)
 		return try JSONDecoder().decode([ItemData].self, from: Data(contentsOf: itemsDataURL))
 	}
 	
@@ -59,12 +54,12 @@ struct AddDefaultData: PostgreSQLMigration {
 	
 	// Add categories.
 	private static func categoriesData() throws -> [CategoryData] {
-		let categoriesDataURL = baseFilesURL.appendingPathComponent("categories.json")
+		let categoriesDataURL = baseFilesURL.appendingPathComponent(Constants.categoriesFileName)
 		return try JSONDecoder().decode([CategoryData].self, from: Data(contentsOf: categoriesDataURL))
 	}
 	
 	private static let categoryItemsData: [CategoryItemData] = {
-		let categoryItemsDataURL = baseFilesURL.appendingPathComponent("category_items.json")
+		let categoryItemsDataURL = baseFilesURL.appendingPathComponent(Constants.categoryItemsFileName)
 		return (try? JSONDecoder().decode([CategoryItemData].self, from: Data(contentsOf: categoryItemsDataURL))) ?? []
 	}()
 	
@@ -107,6 +102,33 @@ struct AddDefaultData: PostgreSQLMigration {
 		categoryItem.description = data.description
 		categoryItem.price = data.price
 		return categoryItem.save(on: conn)
+	}
+	
+	private static func set(_ categoryItemData: CategoryItemData, database: MongoDatabase) throws {
+		let document = CategoryItemDocument(category: categoryItemData.category, item: categoryItemData.item, modifiers: categoryItemData.modifiers)
+		try database.collection(AppConstants.MongoDB.categoryItemsCollection, withType: CategoryItemDocument.self).insertOne(document)
+	}
+	
+	static func addMongoData(_ database: MongoDatabase) throws {
+		for data in categoryItemsData {
+			if data.modifiers != nil { try set(data, database: database) }
+		}
+	}
+}
+
+extension AddDefaultData: PostgreSQLMigration {
+	static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
+		do {
+			return Future<Void>.andAll([
+				create(try itemsData(), on: conn),
+				create(try categoriesData(), on: conn)
+				], eventLoop: conn.eventLoop)
+		}
+		catch { return conn.future(error: error) }
+	}
+	
+	static func revert(on conn: PostgreSQLConnection) -> Future<Void> {
+		return .done(on: conn)
 	}
 }
 
