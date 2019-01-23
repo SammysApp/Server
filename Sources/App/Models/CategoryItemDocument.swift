@@ -24,6 +24,7 @@ struct CategoryItemDocument: Codable {
 	}
 	
 	struct Modifier: Codable {
+		let id: UUID
 		let name: String
 		let price: Double?
 	}
