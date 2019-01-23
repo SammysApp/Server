@@ -110,8 +110,13 @@ struct AddDefaultData {
 	}
 	
 	static func addMongoData(_ database: MongoDatabase) throws {
-		for data in categoryItemsData {
-			if data.modifiers != nil { try set(data, database: database) }
+		let metadataCollection = try database.collection(AppConstants.MongoDB.metadataCollection)
+		let isDefaultDataAddedKey = "isDefaultDataAdded"
+		if try metadataCollection.find([isDefaultDataAddedKey: true]).next() == nil {
+			try metadataCollection.insertOne([isDefaultDataAddedKey: true])
+			for data in categoryItemsData {
+				if data.modifiers != nil { try set(data, database: database) }
+			}
 		}
 	}
 }

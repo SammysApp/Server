@@ -29,10 +29,13 @@
     "item": "60c26ab1-df95-4ae9-a64d-e489d67a03c7",
     "modifiers": [
       {
+        "id": "cbe8a854-ea9a-4994-ba64-63ba9756939a",
         "name": "Regular",
       },
       {
-        "name": "Chopped"
+        "id": "22da64ad-339d-4210-a59b-7ffe2c1be191",
+        "name": "Chopped",
+        "price": 0.95
       }
     ]
   },
@@ -41,10 +44,13 @@
     "item": "a07350ac-11e0-45ec-b40f-f87c690e1e59",
     "modifiers": [
       {
+        "id": "30e3443b-1403-4816-946f-6288ca470af4",
         "name": "Regular",
       },
       {
-        "name": "Chopped"
+        "id": "4b8a5776-3b64-447c-bedd-7f4f4800f252",
+        "name": "Chopped",
+        "price": 0.95
       }
     ]
   },
@@ -53,10 +59,13 @@
     "item": "00cb976d-e075-4831-945f-88cbf2a85b48",
     "modifiers": [
       {
+        "id": "dd93825d-01e1-4504-8e0e-11cfd8ed953a",
         "name": "Regular",
       },
       {
-        "name": "Chopped"
+        "id": "65e9a27a-cace-4df2-abe4-8f42c2036bf1",
+        "name": "Chopped",
+        "price": 0.95
       }
     ]
   },
@@ -65,10 +74,13 @@
     "item": "d7ea9b8e-2e0a-4e31-8401-9c63387d5672",
     "modifiers": [
       {
+        "id": "f5c3c1a8-c9a7-4b11-bef9-40fafe4b835b",
         "name": "Regular",
       },
       {
-        "name": "Chopped"
+        "id": "21ce2523-89b0-4c6c-a7eb-e1e99f13eb8a",
+        "name": "Chopped",
+        "price": 0.95
       }
     ]
   },
@@ -77,10 +89,13 @@
     "item": "44f1e1c6-0150-4d94-901d-122807c2dda3",
     "modifiers": [
       {
+        "id": "7ab2a635-f6ea-4baa-a801-6f821de93786",
         "name": "Regular",
       },
       {
-        "name": "Chopped"
+        "id": "93f90b58-f013-4d72-86f8-e0aaaa48d04c",
+        "name": "Chopped",
+        "price": 0.95
       }
     ]
   },
@@ -89,10 +104,13 @@
     "item": "3ae607a0-8602-4db1-85b2-6b310505ae94",
     "modifiers": [
       {
+        "id": "04d5cfc3-11b3-432f-8ee8-b143479933d9",
         "name": "Regular",
       },
       {
-        "name": "Chopped"
+        "id": "b1a3ee3e-f36e-401f-9975-9777f9020d4d",
+        "name": "Chopped",
+        "price": 0.95
       }
     ]
   },

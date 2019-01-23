@@ -13,6 +13,7 @@ struct AppConstants {
 	struct MongoDB {
 		static let connectionString = "mongodb+srv://natanel:\(AppSecrets.MongoDB.password)@cluster0-n8uy4.mongodb.net/test?retryWrites=true"
 		static let database = "sammysserver"
+		static let metadataCollection = "metadata"
 		static let categoryItemsCollection = "category_items"
 	}
 }

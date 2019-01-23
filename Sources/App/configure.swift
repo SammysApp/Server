@@ -39,7 +39,8 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	MongoSwift.initialize()
 	let client = try MongoClient(connectionString: AppConstants.MongoDB.connectionString)
 	let mongoDatabase = try client.db(AppConstants.MongoDB.database)
-	let currentCollections = try mongoDatabase.listCollections()
+	
+	let currentCollections = Array(try mongoDatabase.listCollections())
 	if !currentCollections.contains(named: AppConstants.MongoDB.categoryItemsCollection) {
 		let collection = try mongoDatabase
 			.createCollection(AppConstants.MongoDB.categoryItemsCollection)
@@ -48,6 +49,11 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 			CategoryItemDocument.CodingKeys.item.rawValue: 1
 		])
 	}
+	if !currentCollections.contains(named: AppConstants.MongoDB.metadataCollection) {
+		let _ = try mongoDatabase
+			.createCollection(AppConstants.MongoDB.metadataCollection)
+	}
+	
 	try AddDefaultData.addMongoData(mongoDatabase)
 	services.register(client)
 	
@@ -69,7 +75,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 
 extension MongoClient: Service {}
 
-private extension MongoCursor where T == Document {
+private extension Array where Element == Document {
 	func contains(named name: String) -> Bool {
 		return contains { $0["name"] as? String == name }
 	}
