@@ -22,3 +22,9 @@ final class CategoryItem: PostgreSQLUUIDPivot, ModifiablePivot {
 }
 
 extension CategoryItem: Migration {}
+
+extension CategoryItem {
+	var modifiers: Children<CategoryItem, Modifier> {
+		return children(\.parentCategoryItemID)
+	}
+}

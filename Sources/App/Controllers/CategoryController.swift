@@ -7,7 +7,7 @@ final class CategoryController {
 	}
 	
 	func allRootCategories(_ req: Request) -> Future<[Category]> {
-		return Category.query(on: req).filter(\.parentID == nil).all()
+		return Category.query(on: req).filter(\.parentCategoryID == nil).all()
 	}
 	
 	func allSubcategories(_ req: Request) throws -> Future<[Category]> {

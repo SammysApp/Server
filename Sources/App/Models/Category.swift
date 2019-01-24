@@ -4,12 +4,12 @@ import FluentPostgreSQL
 final class Category: PostgreSQLUUIDModel {
 	var id: Category.ID?
 	var name: String
-	var parentID: Category.ID?
+	var parentCategoryID: Category.ID?
 	
-	init(id: Category.ID? = nil, name: String, parentID: Category.ID? = nil) {
+	init(id: Category.ID? = nil, name: String, parentCategoryID: Category.ID? = nil) {
 		self.id = id
 		self.name = name
-		self.parentID = parentID
+		self.parentCategoryID = parentCategoryID
 	}
 }
 
@@ -19,11 +19,11 @@ extension Category: Migration {}
 
 extension Category {
 	var parentCategory: Parent<Category, Category>? {
-		return parent(\.parentID)
+		return parent(\.parentCategoryID)
 	}
 	
 	var subcategories: Children<Category, Category> {
-		return children(\.parentID)
+		return children(\.parentCategoryID)
 	}
 }
 
