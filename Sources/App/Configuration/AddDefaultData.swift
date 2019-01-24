@@ -1,6 +1,5 @@
 import Vapor
 import FluentPostgreSQL
-import MongoSwift
 
 private struct ItemData: Codable {
 	let id: Item.ID
@@ -19,7 +18,7 @@ private struct CategoryItemData: Codable {
 	let item: Item.ID
 	let description: String?
 	let price: Double?
-	let modifiers: [CategoryItemDocument.Modifier]?
+	//let modifiers
 }
 
 struct AddDefaultData {
@@ -102,22 +101,6 @@ struct AddDefaultData {
 		categoryItem.description = data.description
 		categoryItem.price = data.price
 		return categoryItem.save(on: conn)
-	}
-	
-	private static func set(_ categoryItemData: CategoryItemData, database: MongoDatabase) throws {
-		let document = CategoryItemDocument(category: categoryItemData.category, item: categoryItemData.item, modifiers: categoryItemData.modifiers)
-		try database.collection(AppConstants.MongoDB.categoryItemsCollection, withType: CategoryItemDocument.self).insertOne(document)
-	}
-	
-	static func addMongoData(_ database: MongoDatabase) throws {
-		let metadataCollection = try database.collection(AppConstants.MongoDB.metadataCollection)
-		let isDefaultDataAddedKey = "isDefaultDataAdded"
-		if try metadataCollection.find([isDefaultDataAddedKey: true]).next() == nil {
-			try metadataCollection.insertOne([isDefaultDataAddedKey: true])
-			for data in categoryItemsData {
-				if data.modifiers != nil { try set(data, database: database) }
-			}
-		}
 	}
 }
 

@@ -1,24 +1,7 @@
 import Vapor
 import FluentPostgreSQL
-import MongoSwift
 
 final class CategoryController {
-	func mongoDatabase(_ req: Request) throws -> MongoDatabase {
-		return try req.make(MongoClient.self).db(AppConstants.MongoDB.database)
-	}
-	
-	func categoryItemsCollection(_ req: Request) throws -> MongoCollection<CategoryItemDocument> {
-		return try mongoDatabase(req)
-			.collection(AppConstants.MongoDB.categoryItemsCollection, withType: CategoryItemDocument.self)
-	}
-	
-	func filter(category: Category, item: Item) throws -> Document {
-		return try [
-			CategoryItemDocument.CodingKeys.category.rawValue: category.asBinary(),
-			CategoryItemDocument.CodingKeys.item.rawValue: item.asBinary()
-		]
-	}
-	
 	func allCategories(_ req: Request) -> Future<[Category]> {
 		return Category.query(on: req).all()
 	}
@@ -46,13 +29,6 @@ final class CategoryController {
 		return GetItem(id: try item.requireID(), name: item.name, description: categoryItem?.description, price: categoryItem?.price)
 	}
 	
-	func allModifiers(_ req: Request) throws -> Future<[CategoryItemDocument.Modifier]> {
-		let collection = try categoryItemsCollection(req)
-		return try req.parameters.next(Category.self)
-			.and(req.parameters.next(Item.self))
-			.map { try collection.find(self.filter(category: $0, item: $1)).next()?.modifiers ?? [] }
-	}
-	
 	func save(_ req: Request, category: Category) -> Future<Category> {
 		return category.save(on: req)
 	}
@@ -66,7 +42,6 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get("roots", use: allRootCategories)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
-		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
