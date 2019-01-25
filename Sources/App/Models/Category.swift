@@ -30,3 +30,12 @@ extension Category {
 extension Category {
 	var items: Siblings<Category, Item, CategoryItem> { return siblings() }
 }
+
+extension Category {
+	func pivot(attaching item: Item, on conn: DatabaseConnectable) throws -> Future<CategoryItem?> {
+		return try items.pivots(on: conn)
+			.filter(\.categoryID == requireID())
+			.filter(\.itemID == item.requireID())
+			.first()
+	}
+}

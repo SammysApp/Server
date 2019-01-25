@@ -21,6 +21,17 @@ final class CategoryController {
 			.map { try self.createGetItems(from: $0, categoryItems: $1).sorted() }
 	}
 	
+	func allModifiers(_ req: Request) throws -> Future<[GetModifier]> {
+		return try req.parameters.next(Category.self)
+			.and(try req.parameters.next(Item.self))
+			.flatMap {
+				try $0.pivot(attaching: $1, on: req)
+					.unwrap(or: Abort(.badRequest))
+					.flatMap { try $0.modifiers.query(on: req).all() }
+					.map { try $0.map(GetModifier.init) }
+			}
+	}
+	
 	func createGetItems(from items: [Item], categoryItems: [CategoryItem]) throws -> [GetItem] {
 		return try items.map { item in try self.createGetItem(from: item, categoryItem: categoryItems.first { $0.itemID == item.id }) }
 	}
@@ -42,6 +53,7 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get("roots", use: allRootCategories)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
+		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
@@ -52,6 +64,18 @@ struct GetItem: Content {
 	let name: String
 	let description: String?
 	let price: Double?
+}
+
+struct GetModifier: Content {
+	let id: Modifier.ID
+	let name: String
+	let price: Double?
+	
+	init(_ modifier: Modifier) throws {
+		self.id = try modifier.requireID()
+		self.name = modifier.name
+		self.price = modifier.price
+	}
 }
 
 extension Array where Element == GetItem {
