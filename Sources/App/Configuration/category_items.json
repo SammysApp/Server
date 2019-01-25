@@ -477,41 +477,129 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "904c5578-a070-4989-ae27-90b038ee010e",
-    "price": 3.95
+    "price": 3.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "6880c6ff-48f1-4fb8-8e74-d7b163e50733",
-    "price": 3.95
+    "price": 3.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "3666f033-5c01-44c0-a24d-5d23f937a01b",
-    "price": 3.95
+    "price": 3.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "c43cf370-77e3-471b-921f-c0186c0f84ed",
-    "price": 5.95
+    "price": 5.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "064a30fe-0fb0-4bd6-b477-f49e8e48f5bc",
-    "price": 3.95
+    "price": 3.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "01eaf487-94ca-49cb-856c-4c5b246953db",
-    "price": 5.95
+    "price": 5.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "85dd319c-334b-49be-bf44-3999fcd3a56b",
-    "price": 5.95
+    "price": 5.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "e4658315-d7c4-4a12-8009-c0fae69d976d",
-    "price": 5.95
+    "price": 5.95,
+    "modifiers": [
+      {
+        "name": "Mix"
+      },
+      {
+        "name": "On Top"
+      },
+      {
+        "name": "On Side"
+      }
+    ]
   }
 ]
