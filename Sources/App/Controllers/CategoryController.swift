@@ -30,6 +30,15 @@ final class CategoryController {
 			.map { try self.createGetItems(from: $0, categoryItems: $1).sorted() }
 	}
 	
+	func allCategoryRules(_ req: Request) throws -> Future<GetCategoryRules> {
+		return try req.parameters.next(Category.self)
+			.flatMap { self.dynamoDB.getItems(.init(
+				key: ["id": .init(s: try $0.requireID().uuidString.lowercased())],
+				tableName: String(describing: Category.self),
+				attributesToGet: ["rules"]), on: req.eventLoop)
+			}.map { GetCategoryRules(from: $0.item?["rules"]?.m) }
+	}
+	
 	func allModifiers(_ req: Request) throws -> Future<[GetModifier]> {
 		return try req.parameters.next(Category.self)
 			.and(try req.parameters.next(Item.self))
@@ -63,6 +72,7 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
+		categoriesRoute.get(Category.parameter, "rules", use: allCategoryRules)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
@@ -87,6 +97,14 @@ struct GetModifier: Content {
 	}
 }
 
+struct GetCategoryRules: Content {
+	let maxItems: Int?
+	
+	init(from mapValue: [String: DynamoDB.AttributeValue]?) {
+		self.maxItems = mapValue?[GetCategoryRules.CodingKeys.maxItems.stringValue]?.n?.asInt()
+	}
+}
+
 extension Array where Element == GetItem {
 	var isAllPriced: Bool { return allSatisfy { $0.price != nil } }
 	
@@ -94,4 +112,8 @@ extension Array where Element == GetItem {
 		if isAllPriced { return sorted { $0.price! < $1.price! } }
 		else { return sorted { $0.name < $1.name } }
 	}
+}
+
+private extension String {
+	func asInt() -> Int? { return Int(self) }
 }
