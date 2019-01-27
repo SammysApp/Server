@@ -2,6 +2,24 @@
   "object": {
     "pins": [
       {
+        "package": "AWSSDKSwift",
+        "repositoryURL": "https://github.com/swift-aws/aws-sdk-swift.git",
+        "state": {
+          "branch": null,
+          "revision": "b66a8ad7f949ef80a503069603ad1abd240e7f7d",
+          "version": "2.0.2"
+        }
+      },
+      {
+        "package": "AWSSDKSwiftCore",
+        "repositoryURL": "https://github.com/swift-aws/aws-sdk-swift-core.git",
+        "state": {
+          "branch": null,
+          "revision": "ee093b1f7b9114bc12bd629c43e64c216c7efd89",
+          "version": "2.0.0-rc.4"
+        }
+      },
+      {
         "package": "Console",
         "repositoryURL": "https://github.com/vapor/console.git",
         "state": {
@@ -60,8 +78,17 @@
         "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
-          "revision": "6973bf50dab8dd00e4daf8cb82ca72b33f5db016",
-          "version": "3.1.6"
+          "revision": "4c8c655932fdb409c11549eadabf27d3d61bc24c",
+          "version": "3.1.7"
+        }
+      },
+      {
+        "package": "HypertextApplicationLanguage",
+        "repositoryURL": "https://github.com/Yasumoto/HypertextApplicationLanguage.git",
+        "state": {
+          "branch": null,
+          "revision": "2302002502fe573494577cc6e8df686e385519f8",
+          "version": "1.1.0"
         }
       },
       {
@@ -70,6 +97,15 @@
         "state": {
           "branch": null,
           "revision": "e57007c23a52b68e44ebdfc70cbe882a7c4f1ec3",
+          "version": "3.0.2"
+        }
+      },
+      {
+        "package": "INIParser",
+        "repositoryURL": "https://github.com/PerfectlySoft/Perfect-INIParser.git",
+        "state": {
+          "branch": null,
+          "revision": "0952aac9ca54324ff25191569fd9c48eec424772",
           "version": "3.0.2"
         }
       },
@@ -114,8 +150,8 @@
         "repositoryURL": "https://github.com/vapor-community/stripe-provider.git",
         "state": {
           "branch": null,
-          "revision": "5c0fe29543e709a2e73b82f55dd467dc3de9e760",
-          "version": "2.2.6"
+          "revision": "166b1825617db9fe184449f90fd1e5f3f02bba27",
+          "version": "2.2.9"
         }
       },
       {
@@ -152,6 +188,15 @@
           "branch": null,
           "revision": "37760e9a52030bb9011972c5213c3350fa9d41fd",
           "version": "1.0.0"
+        }
+      },
+      {
+        "package": "SwiftyJSON",
+        "repositoryURL": "https://github.com/IBM-Swift/SwiftyJSON.git",
+        "state": {
+          "branch": null,
+          "revision": "f2612ea3ac29996ae9601bdcb00cc1c29e26f104",
+          "version": "17.0.4"
         }
       },
       {

@@ -1,7 +1,16 @@
 import Vapor
 import FluentPostgreSQL
+import AWSSDKSwiftCore
+import DynamoDB
+
+typealias Request = Vapor.Request
 
 final class CategoryController {
+	let dynamoDB = DynamoDB(
+		accessKeyId: AppSecrets.AWS.accessKeyId,
+		secretAccessKey: AppSecrets.AWS.secretAccessKey
+	)
+	
 	func allCategories(_ req: Request) -> Future<[Category]> {
 		return Category.query(on: req).all()
 	}
