@@ -24,30 +24,19 @@ final class CategoryController {
 			.flatMap { try $0.subcategories.query(on: req).all() }
 	}
 	
+	func allCategoryRules(_ req: Request) throws -> Future<GetCategoryRules> {
+		return try req.parameters.next(Category.self)
+			.flatMap { try self.dynamoDB.getItems(.init(
+				key: ["category": $0.asAttributeValue() ],
+				tableName: String(describing: Category.self),
+				attributesToGet: ["rules"]), on: req.eventLoop)
+			}.map { GetCategoryRules(from: $0.item?["rules"]?.m ?? [:]) }
+	}
+	
 	func allItems(_ req: Request) throws -> Future<[GetItem]> {
 		return try req.parameters.next(Category.self).map { $0.items }
 			.flatMap { try $0.query(on: req).all().and($0.pivots(on: req).all()) }
 			.map { try self.createGetItems(from: $0, categoryItems: $1).sorted() }
-	}
-	
-	func allCategoryRules(_ req: Request) throws -> Future<GetCategoryRules> {
-		return try req.parameters.next(Category.self)
-			.flatMap { self.dynamoDB.getItems(.init(
-				key: ["id": .init(s: try $0.requireID().uuidString.lowercased())],
-				tableName: String(describing: Category.self),
-				attributesToGet: ["rules"]), on: req.eventLoop)
-			}.map { GetCategoryRules(from: $0.item?["rules"]?.m) }
-	}
-	
-	func allModifiers(_ req: Request) throws -> Future<[GetModifier]> {
-		return try req.parameters.next(Category.self)
-			.and(try req.parameters.next(Item.self))
-			.flatMap {
-				try $0.pivot(attaching: $1, on: req)
-					.unwrap(or: Abort(.badRequest))
-					.flatMap { try $0.modifiers.query(on: req).all() }
-					.map { try $0.map(GetModifier.init) }
-			}
 	}
 	
 	func createGetItems(from items: [Item], categoryItems: [CategoryItem]) throws -> [GetItem] {
@@ -55,7 +44,25 @@ final class CategoryController {
 	}
 	
 	func createGetItem(from item: Item, categoryItem: CategoryItem? = nil) throws -> GetItem {
-		return GetItem(id: try item.requireID(), name: item.name, description: categoryItem?.description, price: categoryItem?.price)
+		return try GetItem(id: item.requireID(), name: item.name, description: categoryItem?.description, price: categoryItem?.price)
+	}
+	
+	func allCategoryItemModifiers(_ req: Request) throws -> Future<[GetModifier]> {
+		return try req.parameters.next(Category.self)
+			.and(try req.parameters.next(Item.self))
+			.flatMap { try $0.pivot(attaching: $1, on: req)
+				.unwrap(or: Abort(.badRequest))
+				.flatMap { try $0.modifiers.query(on: req).all() }
+				.map { try $0.map(GetModifier.init) } }
+	}
+	
+	func allCategoryItemRules(_ req: Request) throws -> Future<GetCategoryItemRules> {
+		return try req.parameters.next(Category.self)
+			.and(try req.parameters.next(Item.self))
+			.flatMap { try self.dynamoDB.getItems(.init(
+				key: ["category": $0.asAttributeValue(), "item": $1.asAttributeValue()],
+				tableName: String(describing: CategoryItem.self)), on: req.eventLoop)
+			}.map { GetCategoryItemRules(from: $0.item?["rules"]?.m ?? [:]) }
 	}
 	
 	func save(_ req: Request, category: Category) -> Future<Category> {
@@ -70,9 +77,11 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get(use: allCategories)
 		categoriesRoute.get("roots", use: allRootCategories)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
-		categoriesRoute.get(Category.parameter, "items", use: allItems)
-		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allModifiers)
 		categoriesRoute.get(Category.parameter, "rules", use: allCategoryRules)
+		
+		categoriesRoute.get(Category.parameter, "items", use: allItems)
+		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allCategoryItemModifiers)
+		categoriesRoute.get(Category.parameter, "items", Item.parameter, "rules", use: allCategoryItemRules)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
@@ -100,8 +109,16 @@ struct GetModifier: Content {
 struct GetCategoryRules: Content {
 	let maxItems: Int?
 	
-	init(from mapValue: [String: DynamoDB.AttributeValue]?) {
-		self.maxItems = mapValue?[GetCategoryRules.CodingKeys.maxItems.stringValue]?.n?.asInt()
+	init(from mapValue: [String: DynamoDB.AttributeValue]) {
+		self.maxItems = mapValue[GetCategoryRules.CodingKeys.maxItems.stringValue]?.n?.asInt()
+	}
+}
+
+struct GetCategoryItemRules: Content {
+	let maxModifiers: Int?
+	
+	init(from mapValue: [String: DynamoDB.AttributeValue]) {
+		self.maxModifiers = mapValue[GetCategoryItemRules.CodingKeys.maxModifiers.stringValue]?.n?.asInt()
 	}
 }
 
@@ -111,6 +128,12 @@ extension Array where Element == GetItem {
 	func sorted() -> [GetItem] {
 		if isAllPriced { return sorted { $0.price! < $1.price! } }
 		else { return sorted { $0.name < $1.name } }
+	}
+}
+
+extension Model where ID == UUID {
+	func asAttributeValue() throws -> DynamoDB.AttributeValue {
+		return try .init(s: requireID().uuidString.lowercased())
 	}
 }
 
