@@ -36,15 +36,11 @@ final class CategoryController {
 	func allItems(_ req: Request) throws -> Future<[GetItem]> {
 		return try req.parameters.next(Category.self).map { $0.items }
 			.flatMap { try $0.query(on: req).all().and($0.pivots(on: req).all()) }
-			.map { try self.createGetItems(from: $0, categoryItems: $1).sorted() }
+			.map { try self.getItems(items: $0, categoryItems: $1).sorted() }
 	}
 	
-	func createGetItems(from items: [Item], categoryItems: [CategoryItem]) throws -> [GetItem] {
-		return try items.map { item in try self.createGetItem(from: item, categoryItem: categoryItems.first { $0.itemID == item.id }) }
-	}
-	
-	func createGetItem(from item: Item, categoryItem: CategoryItem? = nil) throws -> GetItem {
-		return try GetItem(id: item.requireID(), name: item.name, description: categoryItem?.description, price: categoryItem?.price)
+	func getItems(items: [Item], categoryItems: [CategoryItem]) throws -> [GetItem] {
+		return try items.map { item in try GetItem(item: item, categoryItem: categoryItems.first { $0.itemID == item.id }) }
 	}
 	
 	func allCategoryItemModifiers(_ req: Request) throws -> Future<[GetModifier]> {
@@ -76,12 +72,13 @@ extension CategoryController: RouteCollection {
 		
 		categoriesRoute.get(use: allCategories)
 		categoriesRoute.get("roots", use: allRootCategories)
-		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
-		categoriesRoute.get(Category.parameter, "rules", use: allCategoryRules)
 		
+		categoriesRoute.get(Category.parameter, "rules", use: allCategoryRules)
+		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
 		categoriesRoute.get(Category.parameter, "items", use: allItems)
-		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allCategoryItemModifiers)
+		
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "rules", use: allCategoryItemRules)
+		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allCategoryItemModifiers)
 		
 		categoriesRoute.post(Category.self, use: save)
 	}
@@ -91,18 +88,25 @@ struct GetItem: Content {
 	let id: Item.ID
 	let name: String
 	let description: String?
-	let price: Double?
+	let price: Decimal?
+	
+	init(item: Item, categoryItem: CategoryItem? = nil) throws {
+		self.id = try item.requireID()
+		self.name = item.name
+		self.description = categoryItem?.description
+		self.price = categoryItem?.price?.asDecimal()
+	}
 }
 
 struct GetModifier: Content {
 	let id: Modifier.ID
 	let name: String
-	let price: Double?
+	let price: Decimal?
 	
 	init(_ modifier: Modifier) throws {
 		self.id = try modifier.requireID()
 		self.name = modifier.name
-		self.price = modifier.price
+		self.price = modifier.price?.asDecimal()
 	}
 }
 
@@ -139,4 +143,8 @@ extension Model where ID == UUID {
 
 private extension String {
 	func asInt() -> Int? { return Int(self) }
+}
+
+private extension Double {
+	func asDecimal() -> Decimal { return Decimal(self) }
 }
