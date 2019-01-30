@@ -16,7 +16,5 @@ extension Item: Parameter {}
 extension Item: Migration {}
 
 extension Item {
-	var parentCategories: Siblings<Item, Category, CategoryItem> {
-		return siblings()
-	}
+	var parentCategories: Siblings<Item, Category, CategoryItem> { return siblings() }
 }

@@ -7,6 +7,6 @@ struct AppConstants {
 		static let hostname = "sammys.cqd1sjetbcgb.us-east-1.rds.amazonaws.com"
 		static let port = 5432
 		static let username = "niazoff"
-		static let database = "data"
+		static let database = "dev"
 	}
 }

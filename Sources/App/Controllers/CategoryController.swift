@@ -1,4 +1,5 @@
 import Vapor
+import Fluent
 import FluentPostgreSQL
 import AWSSDKSwiftCore
 import DynamoDB
@@ -64,6 +65,17 @@ final class CategoryController {
 	func save(_ req: Request, category: Category) -> Future<Category> {
 		return category.save(on: req)
 	}
+	
+	func save(_ req: Request, postConstructedItem: PostConstructedItem) throws
+		-> Future<HTTPStatus> {
+		return try req.parameters.next(Category.self)
+			.then { ConstructedItem(id: postConstructedItem.id, parentCategoryID: $0.id)
+				.save(on: req) }
+			.and(CategoryItem.query(on: req)
+				.filter(\.id ~~ postConstructedItem.categoryItems).all())
+			.then { $0.categoryItems.attachAll($1, on: req) }
+			.transform(to: .ok)
+	}
 }
 
 extension CategoryController: RouteCollection {
@@ -81,6 +93,7 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allCategoryItemModifiers)
 		
 		categoriesRoute.post(Category.self, use: save)
+		categoriesRoute.post(PostConstructedItem.self, at: Category.parameter, "constructed-items", use: save)
 	}
 }
 
@@ -124,6 +137,11 @@ struct GetCategoryItemRules: Content {
 	init(from mapValue: [String: DynamoDB.AttributeValue]) {
 		self.maxModifiers = mapValue[GetCategoryItemRules.CodingKeys.maxModifiers.stringValue]?.n?.asInt()
 	}
+}
+
+struct PostConstructedItem: Content {
+	let id: ConstructedItem.ID?
+	let categoryItems: [CategoryItem.ID]
 }
 
 extension Array where Element == GetItem {

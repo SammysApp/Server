@@ -8,14 +8,14 @@ final class CategoryItem: PostgreSQLUUIDPivot, ModifiablePivot {
 	static let leftIDKey: LeftIDKey = \.categoryID
 	static let rightIDKey: RightIDKey = \.itemID
 	
-	var id: UUID?
+	var id: CategoryItem.ID?
 	var categoryID: Category.ID
 	var itemID: Item.ID
 	
 	var description: String?
 	var price: Double?
 	
-	init(_ category: Category, _ item: Item) throws {
+	init(_ category: Left, _ item: Right) throws {
 		self.categoryID = try category.requireID()
 		self.itemID = try item.requireID()
 	}
