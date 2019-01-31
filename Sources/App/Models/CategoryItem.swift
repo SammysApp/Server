@@ -24,16 +24,6 @@ final class CategoryItem: PostgreSQLUUIDPivot, ModifiablePivot {
 extension CategoryItem: Migration {}
 
 extension CategoryItem {
-	func category(on conn: DatabaseConnectable) -> Future<Category?> {
-		return Category.find(categoryID, on: conn)
-	}
-	
-	func item(on conn: DatabaseConnectable) -> Future<Item?> {
-		return Item.find(itemID, on: conn)
-	}
-}
-
-extension CategoryItem {
 	var modifiers: Children<CategoryItem, Modifier> {
 		return children(\.parentCategoryItemID)
 	}
