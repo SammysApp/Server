@@ -32,10 +32,22 @@ extension Category {
 }
 
 extension Category {
+	var constructedItems: Children<Category, ConstructedItem> {
+		return children(\.parentCategoryID)
+	}
+}
+
+extension Category {
 	func pivot(attaching item: Item, on conn: DatabaseConnectable) throws -> Future<CategoryItem?> {
 		return try items.pivots(on: conn)
 			.filter(\.categoryID == requireID())
 			.filter(\.itemID == item.requireID())
 			.first()
+	}
+}
+
+extension Category: Equatable {
+	static func == (lhs: Category, rhs: Category) -> Bool {
+		do { return try lhs.requireID() == rhs.requireID() } catch { return false }
 	}
 }

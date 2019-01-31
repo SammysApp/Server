@@ -62,19 +62,55 @@ final class CategoryController {
 			}.map { GetCategoryItemRules(from: $0.item?["rules"]?.m ?? [:]) }
 	}
 	
+	func allConstructedItems(_ req: Request) throws
+		-> Future<[ConstructedItemResponse]> {
+		return try req.parameters.next(Category.self)
+			.flatMap { try $0.constructedItems.query(on: req).all() }
+			.flatMap { constructedItems in try constructedItems.map { try self.responseContent(for: $0, on: req) }.flatten(on: req) }
+	}
+	
 	func save(_ req: Request, category: Category) -> Future<Category> {
 		return category.save(on: req)
 	}
 	
-	func save(_ req: Request, postConstructedItem: PostConstructedItem) throws
-		-> Future<HTTPStatus> {
+	func save(_ req: Request, content: ConstructedItemRequest) throws
+		-> Future<ConstructedItemResponse> {
 		return try req.parameters.next(Category.self)
-			.then { ConstructedItem(id: postConstructedItem.id, parentCategoryID: $0.id)
+			.then { ConstructedItem(id: content.id, parentCategoryID: $0.id)
 				.save(on: req) }
-			.and(CategoryItem.query(on: req)
-				.filter(\.id ~~ postConstructedItem.categoryItems).all())
-			.then { $0.categoryItems.attachAll($1, on: req) }
-			.transform(to: .ok)
+			.and(CategoryItem.query(on: req).filter(\.id ~~ content.categoryItems).all())
+			.then { $0.categoryItems.attachAll($1, on: req).transform(to: $0) }
+			.flatMap { try self.responseContent(for: $0, on: req) }
+	}
+	
+	func responseContent(for constructedItem: ConstructedItem, on conn: DatabaseConnectable) throws -> Future<ConstructedItemResponse> {
+		return try constructedItem.categoryItems.query(on: conn).all()
+			.flatMap { return self.categorizedItems(for: $0, on: conn) }
+			.map { try ConstructedItemResponse(id: constructedItem.requireID(), items: $0) }
+	}
+	
+	func categorizedItems(for categoryItems: [CategoryItem], on conn: DatabaseConnectable)
+		-> Future<[CategorizedItems]> {
+		return categoryItems.map {
+			$0.category(on: conn).unwrap(or: Abort(.notFound))
+			.and($0.item(on: conn).unwrap(or: Abort(.notFound)))
+		}.flatten(on: conn).map { self.categorizedItems(from: $0) }
+	}
+	
+	func categorizedItems(from categoryItemPairs: [(Category, Item)])
+		-> [CategorizedItems] {
+			var categorizedItems = [CategorizedItems]()
+			var currentCategory: Category?
+			var currentItems = [Item]()
+			for (category, item) in categoryItemPairs {
+				if currentCategory != category {
+					if let currentCategory = currentCategory { categorizedItems.append(CategorizedItems(category: currentCategory, items: currentItems)) }
+					currentCategory = category
+					currentItems = [item]
+				} else { currentItems.append(item) }
+			}
+			if let currentCategory = currentCategory { categorizedItems.append(CategorizedItems(category: currentCategory, items: currentItems)) }
+			return categorizedItems
 	}
 }
 
@@ -92,8 +128,10 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "rules", use: allCategoryItemRules)
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allCategoryItemModifiers)
 		
+		categoriesRoute.get(Category.parameter, "constructed-items", use: allConstructedItems)
+		
 		categoriesRoute.post(Category.self, use: save)
-		categoriesRoute.post(PostConstructedItem.self, at: Category.parameter, "constructed-items", use: save)
+		categoriesRoute.post(ConstructedItemRequest.self, at: Category.parameter, "constructed-items", use: save)
 	}
 }
 
@@ -139,9 +177,19 @@ struct GetCategoryItemRules: Content {
 	}
 }
 
-struct PostConstructedItem: Content {
+struct ConstructedItemRequest: Content {
 	let id: ConstructedItem.ID?
 	let categoryItems: [CategoryItem.ID]
+}
+
+struct ConstructedItemResponse: Content {
+	let id: ConstructedItem.ID
+	var items: [CategorizedItems]
+}
+
+struct CategorizedItems: Codable {
+	let category: Category
+	let items: [Item]
 }
 
 extension Array where Element == GetItem {
