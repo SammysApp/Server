@@ -137,7 +137,7 @@ struct ItemResponse: Content {
 	let id: Item.ID
 	let name: String
 	let description: String?
-	let price: Decimal?
+	let price: Int?
 	let modifers: [ModifierResponse]?
 	
 	init(item: Item,
@@ -146,7 +146,7 @@ struct ItemResponse: Content {
 		self.id = try item.requireID()
 		self.name = item.name
 		self.description = categoryItem?.description
-		self.price = categoryItem?.price?.asDecimal()
+		self.price = categoryItem?.price
 		if let modifiers = modifiers {
 			self.modifers = modifiers.isEmpty ? nil : modifiers
 		} else { self.modifers = nil }
@@ -156,12 +156,12 @@ struct ItemResponse: Content {
 struct ModifierResponse: Content {
 	let id: Modifier.ID
 	let name: String
-	let price: Decimal?
+	let price: Int?
 	
 	init(_ modifier: Modifier) throws {
 		self.id = try modifier.requireID()
 		self.name = modifier.name
-		self.price = modifier.price?.asDecimal()
+		self.price = modifier.price
 	}
 }
 
@@ -189,7 +189,7 @@ struct ConstructedItemRequest: Content {
 
 struct ConstructedItemResponse: Content {
 	let id: ConstructedItem.ID
-	let price: Decimal
+	let price: Int
 	let items: [CategorizedItemsResponse]
 }
 

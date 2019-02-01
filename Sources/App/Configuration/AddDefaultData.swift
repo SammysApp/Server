@@ -17,7 +17,7 @@ private struct CategoryItemData: Codable {
 	let category: Category.ID
 	let item: Item.ID
 	let description: String?
-	let price: Double?
+	let price: Int?
 	let modifiers: [Modifier]?
 }
 

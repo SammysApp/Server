@@ -4,7 +4,7 @@ import FluentPostgreSQL
 final class Modifier: PostgreSQLUUIDModel {
 	var id: Modifier.ID?
 	var name: String
-	var price: Double?
+	var price: Int?
 	var parentCategoryItemID: CategoryItem.ID?
 }
 

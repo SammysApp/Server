@@ -2,27 +2,27 @@
   {
     "category": "477d3904-7ad5-4e1f-a919-449cd000229a",
     "item": "4f74dd77-9f50-49ea-acae-406b8e84280f",
-    "price": 6.95
+    "price": 695
   },
   {
     "category": "477d3904-7ad5-4e1f-a919-449cd000229a",
     "item": "36b15e05-d7a6-4893-8335-4443f1f662e1",
-    "price": 9.95
+    "price": 995
   },
   {
     "category": "477d3904-7ad5-4e1f-a919-449cd000229a",
     "item": "ae6af970-ef15-4234-a629-4afd0977e7bf",
-    "price": 13.95
+    "price": 1395
   },
   {
     "category": "477d3904-7ad5-4e1f-a919-449cd000229a",
     "item": "25b4b563-ace5-4e52-b93d-c47283869641",
-    "price": 26.95
+    "price": 2695
   },
   {
     "category": "477d3904-7ad5-4e1f-a919-449cd000229a",
     "item": "567eb6f7-5cce-404c-bdeb-307974f03c40",
-    "price": 49.95
+    "price": 4995
   },
   {
     "category": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
@@ -33,7 +33,7 @@
       },
       {
         "name": "Chopped",
-        "price": 0.95
+        "price": 95
       }
     ]
   },
@@ -46,7 +46,7 @@
       },
       {
         "name": "Chopped",
-        "price": 0.95
+        "price": 95
       }
     ]
   },
@@ -59,7 +59,7 @@
       },
       {
         "name": "Chopped",
-        "price": 0.95
+        "price": 95
       }
     ]
   },
@@ -72,7 +72,7 @@
       },
       {
         "name": "Chopped",
-        "price": 0.95
+        "price": 95
       }
     ]
   },
@@ -85,7 +85,7 @@
       },
       {
         "name": "Chopped",
-        "price": 0.95
+        "price": 95
       }
     ]
   },
@@ -98,19 +98,19 @@
       },
       {
         "name": "Chopped",
-        "price": 0.95
+        "price": 95
       }
     ]
   },
   {
     "category": "942aea85-8743-4cc5-be61-f3ce65954ae3",
     "item": "59456af0-855c-448a-828b-3e5d3b09c21b",
-    "price": 0.95
+    "price": 95
   },
   {
     "category": "942aea85-8743-4cc5-be61-f3ce65954ae3",
     "item": "086ed673-6ef4-411f-a181-c175345e9911",
-    "price": 0.95
+    "price": 95
   },
   {
     "category": "8cc1800b-f97e-4a17-a83a-2d8904837a5e",
@@ -427,57 +427,57 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "74e23738-f5dc-406d-acfe-46eb963f646f",
-    "price": 3.25
+    "price": 325
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "0ce32aba-058a-4391-9dff-9dbc126d9bbc",
-    "price": 2.75
+    "price": 275
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "f93b5e7a-5dcc-47dc-b4cd-a77fb46b10d0",
-    "price": 3.25
+    "price": 325
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "09088964-5d6c-4330-9fb4-c89eab67f8b4",
-    "price": 3.25
+    "price": 325
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "4d8bec44-8859-457f-b506-f1f7dc0403ef",
-    "price": 3.25
+    "price": 325
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "d9ecd208-ae7b-4b03-b678-597f49b7bae1",
-    "price": 2.75
+    "price": 275
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "dd286126-3c65-4b39-840a-43c5db8ad939",
-    "price": 2.75
+    "price": 275
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "1b8e9c69-b20c-4346-b19d-9aad79806706",
-    "price": 2.75
+    "price": 275
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "5a0e4513-2c5f-4131-9c1a-8810d15f6cbb",
-    "price": 3.25
+    "price": 325
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "ff986a86-256c-42e5-a95e-36acad2bad45",
-    "price": 2.75
+    "price": 275
   },
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "904c5578-a070-4989-ae27-90b038ee010e",
-    "price": 3.95,
+    "price": 395,
     "modifiers": [
       {
         "name": "Mix"
@@ -493,7 +493,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "6880c6ff-48f1-4fb8-8e74-d7b163e50733",
-    "price": 3.95,
+    "price": 395,
     "modifiers": [
       {
         "name": "Mix"
@@ -509,7 +509,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "3666f033-5c01-44c0-a24d-5d23f937a01b",
-    "price": 3.95,
+    "price": 395,
     "modifiers": [
       {
         "name": "Mix"
@@ -525,7 +525,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "c43cf370-77e3-471b-921f-c0186c0f84ed",
-    "price": 5.95,
+    "price": 595,
     "modifiers": [
       {
         "name": "Mix"
@@ -541,7 +541,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "064a30fe-0fb0-4bd6-b477-f49e8e48f5bc",
-    "price": 3.95,
+    "price": 395,
     "modifiers": [
       {
         "name": "Mix"
@@ -557,7 +557,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "01eaf487-94ca-49cb-856c-4c5b246953db",
-    "price": 5.95,
+    "price": 595,
     "modifiers": [
       {
         "name": "Mix"
@@ -573,7 +573,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "85dd319c-334b-49be-bf44-3999fcd3a56b",
-    "price": 5.95,
+    "price": 595,
     "modifiers": [
       {
         "name": "Mix"
@@ -589,7 +589,7 @@
   {
     "category": "f103a93a-fa3c-4985-abb6-5a146e1b3a30",
     "item": "e4658315-d7c4-4a12-8009-c0fae69d976d",
-    "price": 5.95,
+    "price": 595,
     "modifiers": [
       {
         "name": "Mix"

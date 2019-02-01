@@ -28,7 +28,7 @@ extension ConstructedItem {
 }
 
 extension ConstructedItem {
-	func totalPrice(on conn: DatabaseConnectable) throws -> Future<Decimal> {
+	func totalPrice(on conn: DatabaseConnectable) throws -> Future<Int> {
 		return try categoryItems.query(on: conn).all().map { $0 as [Purchasable] }
 		.and(modifiers.query(on: conn).all().map { $0 as [Purchasable] })
 		.map { ($0 + $1).totalPrice }
