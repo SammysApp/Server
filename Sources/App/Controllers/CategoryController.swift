@@ -37,7 +37,7 @@ final class CategoryController {
 	func allItems(_ req: Request) throws -> Future<[ItemResponse]> {
 		return try req.parameters.next(Category.self)
 			.flatMap { try $0.items.query(on: req).alsoDecode(CategoryItem.self).all() }
-			.map { try $0.map(ItemResponse.init).sorted() }
+			.map { try $0.map { try ItemResponse(item: $0, categoryItem: $1) }.sorted() }
 	}
 	
 	func allCategoryItemModifiers(_ req: Request) throws -> Future<[ModifierResponse]> {
@@ -85,9 +85,14 @@ final class CategoryController {
 		return try constructedItem.categoryItems.query(on: conn)
 			.join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self)
 			.join(\Category.id, to: \CategoryItem.categoryID).alsoDecode(Category.self)
-			.all()
-			.map { try $0.map { ($1, try ItemResponse(item: $0.1, categoryItem: $0.0)) }}
-			.map { try ConstructedItemResponse(id: constructedItem.requireID(), items: self.categorizedItems(from: $0)) }
+			.all().flatMap { categoryItemTuples in
+				try categoryItemTuples.map { tuple -> Future<(Category, ItemResponse)> in
+					let ((categoryItem, item), category) = tuple
+					return try constructedItem.modifiers.query(on: conn)
+						.filter(\.parentCategoryItemID == categoryItem.id).all()
+						.map { try (category, ItemResponse(item: item, categoryItem: categoryItem, modifiers: $0.map { try ModifierResponse($0) })) }
+				}.flatten(on: conn)
+			}.map { try ConstructedItemResponse(id: constructedItem.requireID(), items: self.categorizedItems(from: $0)) }
 	}
 	
 	func categorizedItems(from categoryItemPairs: [(Category, ItemResponse)]) -> [CategorizedItemsResponse] {
@@ -132,12 +137,18 @@ struct ItemResponse: Content {
 	let name: String
 	let description: String?
 	let price: Decimal?
+	let modifers: [ModifierResponse]?
 	
-	init(item: Item, categoryItem: CategoryItem? = nil) throws {
+	init(item: Item,
+		 categoryItem: CategoryItem? = nil,
+		 modifiers: [ModifierResponse]? = nil) throws {
 		self.id = try item.requireID()
 		self.name = item.name
 		self.description = categoryItem?.description
 		self.price = categoryItem?.price?.asDecimal()
+		if let modifiers = modifiers {
+			self.modifers = modifiers.isEmpty ? nil : modifiers
+		} else { self.modifers = nil }
 	}
 }
 
