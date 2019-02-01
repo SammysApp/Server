@@ -135,6 +135,7 @@ extension CategoryController: RouteCollection {
 
 struct ItemResponse: Content {
 	let id: Item.ID
+	let categoryItemID: CategoryItem.ID?
 	let name: String
 	let description: String?
 	let price: Int?
@@ -144,6 +145,7 @@ struct ItemResponse: Content {
 		 categoryItem: CategoryItem? = nil,
 		 modifiers: [ModifierResponse]? = nil) throws {
 		self.id = try item.requireID()
+		self.categoryItemID = try categoryItem?.requireID()
 		self.name = item.name
 		self.description = categoryItem?.description
 		self.price = categoryItem?.price
