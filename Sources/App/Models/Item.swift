@@ -3,7 +3,7 @@ import FluentPostgreSQL
 
 final class Item: PostgreSQLUUIDModel {
 	var id: Item.ID?
-	let name: String
+	var name: String
 	
 	init(id: Item.ID? = nil, name: String) {
 		self.id = id

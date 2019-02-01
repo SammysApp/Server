@@ -92,7 +92,8 @@ final class CategoryController {
 						.filter(\.parentCategoryItemID == categoryItem.id).all()
 						.map { try (category, ItemResponse(item: item, categoryItem: categoryItem, modifiers: $0.map { try ModifierResponse($0) })) }
 				}.flatten(on: conn)
-			}.map { try ConstructedItemResponse(id: constructedItem.requireID(), items: self.categorizedItems(from: $0)) }
+			}.and(constructedItem.totalPrice(on: conn))
+			.map { try ConstructedItemResponse(id: constructedItem.requireID(), price: $1, items: self.categorizedItems(from: $0)) }
 	}
 	
 	func categorizedItems(from categoryItemPairs: [(Category, ItemResponse)]) -> [CategorizedItemsResponse] {
@@ -188,7 +189,8 @@ struct ConstructedItemRequest: Content {
 
 struct ConstructedItemResponse: Content {
 	let id: ConstructedItem.ID
-	var items: [CategorizedItemsResponse]
+	let price: Decimal
+	let items: [CategorizedItemsResponse]
 }
 
 struct CategorizedItemsResponse: Content {

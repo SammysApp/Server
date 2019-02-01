@@ -26,3 +26,11 @@ extension ConstructedItem {
 extension ConstructedItem {
 	var modifiers: Siblings<ConstructedItem, Modifier, ConstructedItemModifier> { return siblings() }
 }
+
+extension ConstructedItem {
+	func totalPrice(on conn: DatabaseConnectable) throws -> Future<Decimal> {
+		return try categoryItems.query(on: conn).all().map { $0 as [Purchasable] }
+		.and(modifiers.query(on: conn).all().map { $0 as [Purchasable] })
+		.map { ($0 + $1).totalPrice }
+	}
+}

@@ -3,11 +3,12 @@ import FluentPostgreSQL
 
 final class Modifier: PostgreSQLUUIDModel {
 	var id: Modifier.ID?
-	let name: String
-	let price: Double?
+	var name: String
+	var price: Double?
 	var parentCategoryItemID: CategoryItem.ID?
 }
 
+extension Modifier: Purchasable {}
 extension Modifier: Content {}
 extension Modifier: Parameter {}
 extension Modifier: Migration {}
