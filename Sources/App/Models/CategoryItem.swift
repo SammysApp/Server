@@ -15,7 +15,7 @@ final class CategoryItem: PostgreSQLUUIDPivot, ModifiablePivot {
 	var description: String?
 	var price: Double?
 	
-	init(_ category: Left, _ item: Right) throws {
+	init(_ category: Category, _ item: Item) throws {
 		self.categoryID = try category.requireID()
 		self.itemID = try item.requireID()
 	}

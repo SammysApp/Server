@@ -14,9 +14,9 @@ final class ConstructedItemCategoryItem: PostgreSQLUUIDModel, ModifiablePivot {
 	var constructedItemID: ConstructedItem.ID
 	var categoryItemID: CategoryItem.ID
 	
-	init(_ left: Left, _ right: Right) throws {
-		self.constructedItemID = try left.requireID()
-		self.categoryItemID = try right.requireID()
+	init(_ constructedItem: ConstructedItem, _ categoryItem: CategoryItem) throws {
+		self.constructedItemID = try constructedItem.requireID()
+		self.categoryItemID = try categoryItem.requireID()
 	}
 }
 

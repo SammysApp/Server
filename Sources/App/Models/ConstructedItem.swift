@@ -22,3 +22,7 @@ extension ConstructedItem {
 extension ConstructedItem {
 	var categoryItems: Siblings<ConstructedItem, CategoryItem, ConstructedItemCategoryItem> { return siblings() }
 }
+
+extension ConstructedItem {
+	var modifiers: Siblings<ConstructedItem, Modifier, ConstructedItemModifier> { return siblings() }
+}

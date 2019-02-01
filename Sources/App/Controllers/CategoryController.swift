@@ -74,8 +74,10 @@ final class CategoryController {
 		return try req.parameters.next(Category.self)
 			.then { ConstructedItem(id: content.id, parentCategoryID: $0.id)
 				.save(on: req) }
-			.and(CategoryItem.query(on: req).filter(\.id ~~ content.categoryItems).all())
+			.and(CategoryItem.query(on: req).filter(\.id ~~ content.items).all())
 			.then { $0.categoryItems.attachAll($1, on: req).transform(to: $0) }
+			.and(Modifier.query(on: req).filter(\.id ~~ (content.modifiers ?? [])).all())
+			.then { $0.modifiers.attachAll($1, on: req).transform(to: $0) }
 			.flatMap { try self.responseContent(for: $0, conn: req) }
 	}
 	
@@ -169,7 +171,8 @@ struct CategoryItemRulesResponse: Content {
 
 struct ConstructedItemRequest: Content {
 	let id: ConstructedItem.ID?
-	let categoryItems: [CategoryItem.ID]
+	let items: [CategoryItem.ID]
+	let modifiers: [Modifier.ID]?
 }
 
 struct ConstructedItemResponse: Content {
