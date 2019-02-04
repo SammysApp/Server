@@ -6,6 +6,13 @@ import Crypto
 final class UserController {
 	let google = GoogleAPIManager()
 	
+	func save(_ req: Request, user: User) throws -> Future<User> {
+		return try verify(req).flatMap { uid in
+			guard user.uid == uid else { throw Abort(.unauthorized) }
+			return user.save(on: req)
+		}
+	}
+	
 	func verify(_ req: Request) throws -> Future<User.UID> {
 		guard let bearer = req.http.headers.bearerAuthorization
 			else { throw Abort(.unauthorized) }
@@ -21,6 +28,8 @@ final class UserController {
 
 extension UserController: RouteCollection {
 	func boot(router: Router) throws {
+		let usersRoute = router.grouped("\(AppConstants.version)/users")
 		
+		usersRoute.post(User.self, use: save)
 	}
 }

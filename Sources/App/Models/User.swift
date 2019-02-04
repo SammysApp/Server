@@ -9,4 +9,5 @@ final class User: PostgreSQLUUIDModel {
 }
 
 extension User: Parameter {}
+extension User: Content {}
 extension User: Migration {}

@@ -38,7 +38,7 @@ extension StripeController: RouteCollection {
 		
 		stripeRoute.post(CreateCustomerData.self, at: "customers", use: createCustomer)
 		stripeRoute.post(CreateChargeData.self, at: "charges", use: createCharge)
-		stripeRoute.post(CreateEphemeralKeyData.self, at: "ephemeral_keys", use: createEphemeralKey)
+		stripeRoute.post(CreateEphemeralKeyData.self, at: "ephemeral-keys", use: createEphemeralKey)
 	}
 }
 
