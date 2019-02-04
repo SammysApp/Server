@@ -52,6 +52,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	migrations.add(model: Modifier.self, database: .psql)
 	migrations.add(migration: AddDefaultData.self, database: .psql)
 	
+	migrations.add(model: User.self, database: .psql)
 	migrations.add(model: ConstructedItem.self, database: .psql)
 	migrations.add(model: ConstructedItemCategoryItem.self, database: .psql)
 	migrations.add(model: ConstructedItemModifier.self, database: .psql)
