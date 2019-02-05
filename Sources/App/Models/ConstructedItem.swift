@@ -4,13 +4,22 @@ import FluentPostgreSQL
 final class ConstructedItem: PostgreSQLUUIDModel {
 	var id: ConstructedItem.ID?
 	var parentCategoryID: Category.ID?
+	var userID: User.ID?
+	var isFavorite: Bool
 	
-	init(id: ConstructedItem.ID? = nil, parentCategoryID: Category.ID? = nil) {
+	init(id: ConstructedItem.ID? = nil,
+		 parentCategoryID: Category.ID? = nil,
+		 userID: User.ID? = nil,
+		 isFavorite: Bool = false) {
 		self.id = id
 		self.parentCategoryID = parentCategoryID
+		self.userID = userID
+		self.isFavorite = isFavorite
 	}
 }
 
+extension ConstructedItem: Parameter {}
+extension ConstructedItem: Content {}
 extension ConstructedItem: Migration {}
 
 extension ConstructedItem {

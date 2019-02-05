@@ -22,11 +22,10 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	
 	// Configure PostgreSQL database.
 	let postgresConfig = PostgreSQLDatabaseConfig(
-		hostname: AppConstants.PostgreSQL.hostname,
-		port: AppConstants.PostgreSQL.port,
-		username: AppConstants.PostgreSQL.username,
-		database: AppConstants.PostgreSQL.database,
-		password: AppSecrets.PostgreSQL.password
+		hostname: AppConstants.PostgreSQL.Local.hostname,
+		port: AppConstants.PostgreSQL.Local.port,
+		username: AppConstants.PostgreSQL.Local.username,
+		database: AppConstants.PostgreSQL.Local.database
 	)
 	let postgres = PostgreSQLDatabase(config: postgresConfig)
 	

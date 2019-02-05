@@ -11,6 +11,9 @@ public func routes(_ router: Router) throws {
 	let itemController = ItemController()
 	try router.register(collection: itemController)
 	
+	let constructedItemController = ConstructedItemController()
+	try router.register(collection: constructedItemController)
+	
 	let stripeController = StripeController()
 	try router.register(collection: stripeController)
 }
