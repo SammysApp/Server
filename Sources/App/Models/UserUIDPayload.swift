@@ -15,6 +15,7 @@ struct UserUIDPayload: JWTPayload {
 		try aud.verify(isEqualTo: "sammys-73b4d")
 		try iss.verify(isEqualTo: "https://securetoken.google.com/sammys-73b4d")
 		try auth_time.verify()
+		guard !sub.value.isEmpty else { throw sub.verifyError }
 	}
 }
 
@@ -22,7 +23,7 @@ struct AuthTimeClaim: JWTUnixEpochClaim {
 	var value: Date
 }
 
-extension JWTUnixEpochClaim {
+private extension JWTUnixEpochClaim {
 	func verify(isBefore date: Date = .init(), or error: JWTError? = nil) throws {
 		switch value.compare(date) {
 		case .orderedAscending: break
@@ -31,13 +32,13 @@ extension JWTUnixEpochClaim {
 	}
 }
 
-extension JWTClaim where Value == String {
+private extension JWTClaim where Value == String {
 	func verify(isEqualTo string: String, or error: Error? = nil) throws {
 		guard value == string else { throw error ?? verifyError }
 	}
 }
 
-extension JWTClaim {
+private extension JWTClaim {
 	var verifyError: JWTError {
 		switch Self.self {
 		case is IssuedAtClaim.Type:
@@ -46,6 +47,10 @@ extension JWTClaim {
 			return JWTError(identifier: "aud", reason: "Audience claim failed")
 		case is IssuerClaim.Type:
 			return JWTError(identifier: "iss", reason: "Issuer claim failed")
+		case is SubjectClaim.Type:
+			return JWTError(identifier: "sub", reason: "Subject claim failed")
+		case is AuthTimeClaim.Type:
+			return JWTError(identifier: "auth_time", reason: "Authentication time claim failed")
 		default: return JWTError(identifier: "error", reason: "Claim failed")
 		}
 	}
