@@ -33,7 +33,7 @@ final class CategoryController {
 		-> Future<[CategoryResponse]> {
 		return try categories.map { category in
 			try category.subcategories.query(on: req)
-				.count().map { $0 != 0 }.thenThrowing
+				.count().map { $0 > 0 }.thenThrowing
 				{ try CategoryResponse(category: category, isParentCategory: $0) }
 		}.flatten(on: req)
 	}
@@ -50,7 +50,15 @@ final class CategoryController {
 	func allItems(_ req: Request) throws -> Future<[ItemResponse]> {
 		return try req.parameters.next(Category.self)
 			.flatMap { try $0.items.query(on: req).alsoDecode(CategoryItem.self).all() }
-			.map { try $0.map { try ItemResponse(item: $0, categoryItem: $1) }.sorted() }
+			.flatMap { itemCategoryItemPairs in
+				try itemCategoryItemPairs.map { pair -> Future<ItemResponse> in
+					let (item, categoryItem) = pair
+					return try categoryItem.modifiers.query(on: req)
+						.count().map { $0 > 0 }
+						.thenThrowing { isModifiable -> ItemResponse in
+							try ItemResponse(item: item, categoryItem: categoryItem, isModifiable: isModifiable) }
+				}.flatten(on: req)
+			}
 	}
 	
 	func allCategoryItemModifiers(_ req: Request) throws -> Future<[ModifierResponse]> {
@@ -141,7 +149,7 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "constructedItems", use: allConstructedItems)
 		
 		categoriesRoute.post(Category.self, use: save)
-		categoriesRoute.post(ConstructedItemRequest.self, at: Category.parameter, "constructed-items", use: save)
+		categoriesRoute.post(ConstructedItemRequest.self, at: Category.parameter, "constructedItems", use: save)
 	}
 }
 
@@ -172,10 +180,12 @@ struct ItemResponse: Content {
 	let description: String?
 	let price: Int?
 	let modifers: [ModifierResponse]?
+	let isModifiable: Bool?
 	
 	init(item: Item,
 		 categoryItem: CategoryItem? = nil,
-		 modifiers: [ModifierResponse]? = nil) throws {
+		 modifiers: [ModifierResponse]? = nil,
+		 isModifiable: Bool? = nil) throws {
 		self.id = try item.requireID()
 		self.categoryItemID = try categoryItem?.requireID()
 		self.name = item.name
@@ -184,6 +194,7 @@ struct ItemResponse: Content {
 		if let modifiers = modifiers {
 			self.modifers = modifiers.isEmpty ? nil : modifiers
 		} else { self.modifers = nil }
+		self.isModifiable = isModifiable
 	}
 }
 
