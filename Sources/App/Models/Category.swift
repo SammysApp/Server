@@ -5,11 +5,16 @@ final class Category: PostgreSQLUUIDModel {
 	var id: Category.ID?
 	var name: String
 	var parentCategoryID: Category.ID?
+	var isConstructable: Bool
 	
-	init(id: Category.ID? = nil, name: String, parentCategoryID: Category.ID? = nil) {
+	init(id: Category.ID? = nil,
+		 name: String,
+		 parentCategoryID: Category.ID? = nil,
+		 isConstructable: Bool = false) {
 		self.id = id
 		self.name = name
 		self.parentCategoryID = parentCategoryID
+		self.isConstructable = isConstructable
 	}
 }
 

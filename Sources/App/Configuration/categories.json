@@ -6,6 +6,7 @@
       {
         "id": "d61e1f68-4250-499b-bdbc-ed351300ac33",
         "name": "Build a Salad",
+        "isConstructable": true,
         "subcategories": [
           {
             "id": "477d3904-7ad5-4e1f-a919-449cd000229a",

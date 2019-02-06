@@ -9,6 +9,7 @@ private struct ItemData: Codable {
 private struct CategoryData: Codable {
 	let id: Category.ID
 	let name: String
+	let isConstructable: Bool?
 	let items: [Item.ID]?
 	let subcategories: [CategoryData]?
 }
@@ -63,7 +64,7 @@ struct AddDefaultData {
 	}()
 	
 	private static func category(for categoryData: CategoryData, parentCategoryID: Category.ID?) -> Category {
-		return Category(id: categoryData.id, name: categoryData.name, parentCategoryID: parentCategoryID)
+		return Category(id: categoryData.id, name: categoryData.name, parentCategoryID: parentCategoryID, isConstructable: categoryData.isConstructable ?? false)
 	}
 	
 	private static func create(_ categoriesData: [CategoryData]?, parentCategoryID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
