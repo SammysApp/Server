@@ -11,3 +11,9 @@ final class User: PostgreSQLUUIDModel {
 extension User: Parameter {}
 extension User: Content {}
 extension User: Migration {}
+
+extension User {
+	var constructedItems: Children<User, ConstructedItem> {
+		return children(\.userID)
+	}
+}

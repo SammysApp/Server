@@ -15,6 +15,18 @@ final class UserController {
 		return try verify(req).then { self.user(req, uid: $0) }
 	}
 	
+	func verifiedConstructedItems(_ req: Request) throws -> Future<[ConstructedItem]> {
+		return try verifiedUser(req).flatMap { user in
+			let databaseQuery = try user.constructedItems.query(on: req)
+			if let requestQuery = try? req.query.decode(ConstructedItemsQuery.self) {
+				if let isFavorite = requestQuery.isFavorite {
+					return databaseQuery.filter(\.isFavorite == isFavorite).all()
+				}
+			}
+			return databaseQuery.all()
+		}
+	}
+	
 	func save(_ req: Request, user: User) throws -> Future<User> {
 		return user.save(on: req)
 	}
@@ -42,6 +54,12 @@ extension UserController: RouteCollection {
 		let usersRoute = router.grouped("\(AppConstants.version)/users")
 		
 		usersRoute.get(use: verifiedUser)
+		usersRoute.get("constructed-items", use: verifiedConstructedItems)
+		
 		usersRoute.post(User.self, use: verifiedSave)
 	}
+}
+
+struct ConstructedItemsQuery: Codable {
+	let isFavorite: Bool?
 }
