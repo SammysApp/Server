@@ -12,17 +12,28 @@ final class CategoryController {
 		secretAccessKey: AppSecrets.AWS.secretAccessKey
 	)
 	
-	func allCategories(_ req: Request) -> Future<[Category]> {
+	func allCategories(_ req: Request) -> Future<[CategoryResponse]> {
 		return Category.query(on: req).all()
+			.flatMap { try self.categoryResponses(req, categories: $0) }
 	}
 	
 	func allRootCategories(_ req: Request) -> Future<[Category]> {
 		return Category.query(on: req).filter(\.parentCategoryID == nil).all()
 	}
 	
-	func allSubcategories(_ req: Request) throws -> Future<[Category]> {
+	func allSubcategories(_ req: Request) throws -> Future<[CategoryResponse]> {
 		return try req.parameters.next(Category.self)
 			.flatMap { try $0.subcategories.query(on: req).all() }
+			.flatMap { try self.categoryResponses(req, categories: $0) }
+	}
+	
+	func categoryResponses(_ req: Request, categories: [Category]) throws
+		-> Future<[CategoryResponse]> {
+		return try categories.map { category in
+			try category.subcategories.query(on: req)
+				.count().map { $0 != 0 }.thenThrowing
+				{ try CategoryResponse(category: category, isParentCategory: $0) }
+		}.flatten(on: req)
 	}
 	
 	func allCategoryRules(_ req: Request) throws -> Future<CategoryRulesResponse> {
@@ -130,6 +141,22 @@ extension CategoryController: RouteCollection {
 		
 		categoriesRoute.post(Category.self, use: save)
 		categoriesRoute.post(ConstructedItemRequest.self, at: Category.parameter, "constructed-items", use: save)
+	}
+}
+
+struct CategoryResponse: Content {
+	var id: Category.ID
+	var name: String
+	var parentCategoryID: Category.ID?
+	var isParentCategory: Bool
+	var isConstructable: Bool
+	
+	init(category: Category, isParentCategory: Bool) throws {
+		self.id = try category.requireID()
+		self.name = category.name
+		self.parentCategoryID = category.parentCategoryID
+		self.isParentCategory = isParentCategory
+		self.isConstructable = category.isConstructable
 	}
 }
 
