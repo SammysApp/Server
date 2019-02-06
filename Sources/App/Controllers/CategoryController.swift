@@ -13,12 +13,14 @@ final class CategoryController {
 	)
 	
 	func allCategories(_ req: Request) -> Future<[CategoryResponse]> {
-		return Category.query(on: req).all()
+		var databaseQuery = Category.query(on: req)
+		if let requestQuery = try? req.query.decode(CategoryRequestQuery.self) {
+			if let isRoot = requestQuery.isRoot, isRoot {
+				databaseQuery = databaseQuery.filter(\.parentCategoryID == nil)
+			}
+		}
+		return databaseQuery.all()
 			.flatMap { try self.categoryResponses(req, categories: $0) }
-	}
-	
-	func allRootCategories(_ req: Request) -> Future<[Category]> {
-		return Category.query(on: req).filter(\.parentCategoryID == nil).all()
 	}
 	
 	func allSubcategories(_ req: Request) throws -> Future<[CategoryResponse]> {
@@ -128,7 +130,6 @@ extension CategoryController: RouteCollection {
 		let categoriesRoute = router.grouped("\(AppConstants.version)/categories")
 		
 		categoriesRoute.get(use: allCategories)
-		categoriesRoute.get("roots", use: allRootCategories)
 		
 		categoriesRoute.get(Category.parameter, "rules", use: allCategoryRules)
 		categoriesRoute.get(Category.parameter, "subcategories", use: allSubcategories)
@@ -142,6 +143,10 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.post(Category.self, use: save)
 		categoriesRoute.post(ConstructedItemRequest.self, at: Category.parameter, "constructed-items", use: save)
 	}
+}
+
+struct CategoryRequestQuery: Codable {
+	let isRoot: Bool?
 }
 
 struct CategoryResponse: Content {

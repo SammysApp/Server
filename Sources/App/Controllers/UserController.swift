@@ -18,7 +18,8 @@ final class UserController {
 	func verifiedConstructedItems(_ req: Request) throws -> Future<[ConstructedItem]> {
 		return try verifiedUser(req).flatMap { user in
 			let databaseQuery = try user.constructedItems.query(on: req)
-			if let requestQuery = try? req.query.decode(ConstructedItemsQuery.self) {
+			if let requestQuery =
+				try? req.query.decode(ConstructedItemsRequestQuery.self) {
 				if let isFavorite = requestQuery.isFavorite {
 					return databaseQuery.filter(\.isFavorite == isFavorite).all()
 				}
@@ -60,6 +61,6 @@ extension UserController: RouteCollection {
 	}
 }
 
-struct ConstructedItemsQuery: Codable {
+struct ConstructedItemsRequestQuery: Codable {
 	let isFavorite: Bool?
 }
