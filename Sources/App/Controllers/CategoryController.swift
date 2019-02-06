@@ -138,7 +138,7 @@ extension CategoryController: RouteCollection {
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "rules", use: allCategoryItemRules)
 		categoriesRoute.get(Category.parameter, "items", Item.parameter, "modifiers", use: allCategoryItemModifiers)
 		
-		categoriesRoute.get(Category.parameter, "constructed-items", use: allConstructedItems)
+		categoriesRoute.get(Category.parameter, "constructedItems", use: allConstructedItems)
 		
 		categoriesRoute.post(Category.self, use: save)
 		categoriesRoute.post(ConstructedItemRequest.self, at: Category.parameter, "constructed-items", use: save)

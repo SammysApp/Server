@@ -55,7 +55,7 @@ extension UserController: RouteCollection {
 		let usersRoute = router.grouped("\(AppConstants.version)/users")
 		
 		usersRoute.get(use: verifiedUser)
-		usersRoute.get("constructed-items", use: verifiedConstructedItems)
+		usersRoute.get("constructedItems", use: verifiedConstructedItems)
 		
 		usersRoute.post(User.self, use: verifiedSave)
 	}

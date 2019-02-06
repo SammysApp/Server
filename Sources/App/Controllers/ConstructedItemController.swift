@@ -21,7 +21,7 @@ final class ConstructedItemController {
 extension ConstructedItemController: RouteCollection {
 	func boot(router: Router) throws {
 		let constructedItemsRoute =
-			router.grouped("\(AppConstants.version)/constructed-items")
+			router.grouped("\(AppConstants.version)/constructedItems")
 		
 		constructedItemsRoute.get(ConstructedItem.parameter, use: constructedItem)
 		constructedItemsRoute.put(use: verifiedUpdate)
