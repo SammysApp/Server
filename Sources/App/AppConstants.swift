@@ -18,4 +18,8 @@ struct AppConstants {
 			static let database = "dev"
 		}
 	}
+	
+	struct Firebase {
+		static let projectName = "sammys-73b4d"
+	}
 }

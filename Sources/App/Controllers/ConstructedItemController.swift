@@ -2,7 +2,7 @@ import Vapor
 import FluentPostgreSQL
 
 final class ConstructedItemController {
-	let userController = UserController()
+	private let userController = UserController()
 	
 	func constructedItem(_ req: Request) throws -> Future<ConstructedItem> {
 		return try req.parameters.next(ConstructedItem.self)

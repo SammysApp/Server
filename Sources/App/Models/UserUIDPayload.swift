@@ -2,21 +2,25 @@ import Vapor
 import JWT
 
 struct UserUIDPayload: JWTPayload {
-	let exp: ExpirationClaim
-	let iat: IssuedAtClaim
-	let aud: AudienceClaim
-	let iss: IssuerClaim
-	let sub: SubjectClaim
-	let auth_time: AuthTimeClaim
+	private let exp: ExpirationClaim
+	private let iat: IssuedAtClaim
+	private let aud: AudienceClaim
+	private let iss: IssuerClaim
+	private let sub: SubjectClaim
+	private let auth_time: AuthTimeClaim
 	
 	func verify(using signer: JWTSigner) throws {
 		try exp.verifyNotExpired()
 		try iat.verify()
-		try aud.verify(isEqualTo: "sammys-73b4d")
-		try iss.verify(isEqualTo: "https://securetoken.google.com/sammys-73b4d")
+		try aud.verify(isEqualTo: AppConstants.Firebase.projectName)
+		try iss.verify(isEqualTo: "https://securetoken.google.com/\(AppConstants.Firebase.projectName)")
 		try auth_time.verify()
 		guard !sub.value.isEmpty else { throw sub.verifyError }
 	}
+}
+
+extension UserUIDPayload {
+	var uid: User.UID { return sub.value }
 }
 
 struct AuthTimeClaim: JWTUnixEpochClaim {

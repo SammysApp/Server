@@ -4,7 +4,7 @@ import JWT
 import Crypto
 
 final class UserController {
-	let google = GoogleAPIManager()
+	private let google = GoogleAPIManager()
 	
 	func user(_ req: Request, uid: User.UID) -> Future<User> {
 		return User.query(on: req).filter(\.uid == uid)
@@ -32,9 +32,11 @@ final class UserController {
 		return user.save(on: req)
 	}
 	
-	func verifiedSave(_ req: Request, user: User) throws -> Future<User> {
-		return try verify(req).transform(to: ())
-			.flatMap { try self.save(req, user: user) }
+	func verifiedSave(_ req: Request) throws -> Future<User> {
+		return try verify(req).flatMap { uid in
+			let user = User(uid: uid)
+			return try self.save(req, user: user)
+		}
 	}
 	
 	func verify(_ req: Request) throws -> Future<User.UID> {
@@ -46,7 +48,7 @@ final class UserController {
 				try keys.forEach
 				{ try signers.use(.rs256(key: .public(certificate: $1)), kid: $0) }
 				return signers
-			}.thenThrowing { try JWT<UserUIDPayload>(from: bearer.token, verifiedUsing: $0).payload.sub.value }
+			}.thenThrowing { try JWT<UserUIDPayload>(from: bearer.token, verifiedUsing: $0).payload.uid }
 	}
 }
 
@@ -57,7 +59,7 @@ extension UserController: RouteCollection {
 		usersRoute.get(use: verifiedUser)
 		usersRoute.get("constructedItems", use: verifiedConstructedItems)
 		
-		usersRoute.post(User.self, use: verifiedSave)
+		usersRoute.post(use: verifiedSave)
 	}
 }
 

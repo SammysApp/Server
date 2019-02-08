@@ -7,7 +7,7 @@ import DynamoDB
 typealias Request = Vapor.Request
 
 final class CategoryController {
-	let dynamoDB = DynamoDB(
+	private let dynamoDB = DynamoDB(
 		accessKeyId: AppSecrets.AWS.accessKeyId,
 		secretAccessKey: AppSecrets.AWS.secretAccessKey
 	)
@@ -58,7 +58,7 @@ final class CategoryController {
 						.thenThrowing { isModifiable -> ItemResponse in
 							try ItemResponse(item: item, categoryItem: categoryItem, isModifiable: isModifiable) }
 				}.flatten(on: req)
-			}
+			}.map { $0.sorted() }
 	}
 	
 	func allCategoryItemModifiers(_ req: Request) throws -> Future<[ModifierResponse]> {
@@ -123,12 +123,16 @@ final class CategoryController {
 		var currentItems = [ItemResponse]()
 		for (category, item) in categoryItemPairs {
 			if currentCategory != category {
-				if let currentCategory = currentCategory { categorizedItems.append(CategorizedItemsResponse(category: currentCategory, items: currentItems)) }
+				if let currentCategory = currentCategory {
+					categorizedItems.append(CategorizedItemsResponse(category: currentCategory, items: currentItems))
+				}
 				currentCategory = category; currentItems = [item]
 			}
 			else { currentItems.append(item) }
 		}
-		if let currentCategory = currentCategory { categorizedItems.append(CategorizedItemsResponse(category: currentCategory, items: currentItems)) }
+		if let currentCategory = currentCategory {
+			categorizedItems.append(CategorizedItemsResponse(category: currentCategory, items: currentItems))
+		}
 		return categorizedItems
 	}
 }

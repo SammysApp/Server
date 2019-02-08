@@ -55,6 +55,8 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	migrations.add(model: ConstructedItem.self, database: .psql)
 	migrations.add(model: ConstructedItemCategoryItem.self, database: .psql)
 	migrations.add(model: ConstructedItemModifier.self, database: .psql)
+	migrations.add(model: OutstandingOrder.self, database: .psql)
+	migrations.add(model: OutstandingOrderConstructedItem.self, database: .psql)
 	
 	services.register(migrations)
 }
