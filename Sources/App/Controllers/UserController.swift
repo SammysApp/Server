@@ -1,7 +1,5 @@
 import Vapor
 import FluentPostgreSQL
-import JWT
-import Crypto
 
 final class UserController {
 	let verifier = UserRequestVerifier()
