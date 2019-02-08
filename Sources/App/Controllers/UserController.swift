@@ -4,65 +4,67 @@ import JWT
 import Crypto
 
 final class UserController {
-	private let google = GoogleAPIManager()
+	let verifier = UserRequestVerifier()
 	
-	func user(_ req: Request, uid: User.UID) -> Future<User> {
-		return User.query(on: req).filter(\.uid == uid)
-			.first().unwrap(or: Abort(.badRequest))
+	// MARK: - GET
+	private func getConstructedItems(_ req: Request)
+		throws -> Future<[ConstructedItem]> {
+		return try verifier.verify(req)
+			.flatMap { try req.parameters.next(User.self)
+				.assert(has: $0, or: Abort(.unauthorized)) }
+			.flatMap { try self.constructedItems(for: $0, req: req) }
 	}
 	
-	func verifiedUser(_ req: Request) throws -> Future<User> {
-		return try verify(req).then { self.user(req, uid: $0) }
+	private func getOutstandingOrders(_ req: Request)
+		throws -> Future<[OutstandingOrder]> {
+		return try verifier.verify(req)
+			.flatMap { try req.parameters.next(User.self)
+				.assert(has: $0, or: Abort(.unauthorized)) }
+			.flatMap { try self.outstandingOrders(for: $0, req: req) }
 	}
 	
-	func verifiedConstructedItems(_ req: Request) throws -> Future<[ConstructedItem]> {
-		return try verifiedUser(req).flatMap { user in
-			let databaseQuery = try user.constructedItems.query(on: req)
-			if let requestQuery =
-				try? req.query.decode(ConstructedItemsRequestQuery.self) {
-				if let isFavorite = requestQuery.isFavorite {
-					return databaseQuery.filter(\.isFavorite == isFavorite).all()
-				}
+	// MARK: - POST
+	private func create(_ req: Request) throws -> Future<User> {
+		return try verifier.verify(req).flatMap { User(uid: $0).create(on: req) }
+	}
+	
+	// MARK: - Helper Methods
+	private func constructedItems(for user: User, req: Request)
+		throws -> Future<[ConstructedItem]> {
+		var databaseQuery = try user.constructedItems.query(on: req)
+		if let requestQuery = try? req.query.decode(ConstructedItemsQuery.self) {
+			if let isFavorite = requestQuery.isFavorite {
+				databaseQuery = databaseQuery.filter(\.isFavorite == isFavorite)
 			}
-			return databaseQuery.all()
 		}
+		return databaseQuery.all()
 	}
 	
-	func save(_ req: Request, user: User) throws -> Future<User> {
-		return user.save(on: req)
-	}
-	
-	func verifiedSave(_ req: Request) throws -> Future<User> {
-		return try verify(req).flatMap { uid in
-			let user = User(uid: uid)
-			return try self.save(req, user: user)
-		}
-	}
-	
-	func verify(_ req: Request) throws -> Future<User.UID> {
-		guard let bearer = req.http.headers.bearerAuthorization
-			else { throw Abort(.unauthorized) }
-		return try google.publicKeys(req.client())
-			.thenThrowing { keys -> JWTSigners in
-				let signers = JWTSigners()
-				try keys.forEach
-				{ try signers.use(.rs256(key: .public(certificate: $1)), kid: $0) }
-				return signers
-			}.thenThrowing { try JWT<UserUIDPayload>(from: bearer.token, verifiedUsing: $0).payload.uid }
+	private func outstandingOrders(for user: User, req: Request)
+		throws -> Future<[OutstandingOrder]> {
+		return try user.outstandingOrders.query(on: req).all()
 	}
 }
 
 extension UserController: RouteCollection {
 	func boot(router: Router) throws {
-		let usersRoute = router.grouped("\(AppConstants.version)/users")
+		let usersRouter = router.grouped("\(AppConstants.version)/users")
 		
-		usersRoute.get(use: verifiedUser)
-		usersRoute.get("constructedItems", use: verifiedConstructedItems)
+		usersRouter.get(User.parameter, "constructedItems", use: getConstructedItems)
+		usersRouter.get(User.parameter, "outstandingOrders", use: getOutstandingOrders)
 		
-		usersRoute.post(use: verifiedSave)
+		usersRouter.post(use: create)
 	}
 }
 
-struct ConstructedItemsRequestQuery: Codable {
-	let isFavorite: Bool?
+private extension UserController {
+	struct ConstructedItemsQuery: Codable {
+		let isFavorite: Bool?
+	}
+}
+
+private extension Future where T == User {
+	func assert(has uid: User.UID, or error: Error) -> Future<User> {
+		return thenThrowing { guard $0.uid == uid else { throw error }; return $0 }
+	}
 }
