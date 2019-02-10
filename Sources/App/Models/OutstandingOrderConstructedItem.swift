@@ -12,6 +12,8 @@ final class OutstandingOrderConstructedItem: PostgreSQLUUIDPivot, ModifiablePivo
 	var outstandingOrderID: OutstandingOrder.ID
 	var constructedItemID: ConstructedItem.ID
 	
+	var quantity = 1
+	
 	init(_ outstandingOrder: OutstandingOrder, _ constructedItem: ConstructedItem) throws {
 		self.outstandingOrderID = try outstandingOrder.requireID()
 		self.constructedItemID = try constructedItem.requireID()
