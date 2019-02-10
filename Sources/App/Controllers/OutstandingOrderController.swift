@@ -17,6 +17,14 @@ final class OutstandingOrderController {
 		}
 	}
 	
+	// MARK: - POST
+	func attachConstructedItems(_ req: Request, data: AttachConstructedItemsData)
+		throws -> Future<OutstandingOrder> {
+		return try req.parameters.next(OutstandingOrder.self)
+			.and(ConstructedItem.query(on: req).filter(\.id ~~ data.ids).all())
+			.then { $0.constructedItems.attachAll($1, on: req).transform(to: $0) }
+	}
+	
 	// MARK: - PUT
 	func update(_ req: Request, outstandingOrder: OutstandingOrder)
 		throws -> Future<OutstandingOrder> {
@@ -37,6 +45,7 @@ extension OutstandingOrderController: RouteCollection {
 			.grouped("\(AppConstants.version)/outstandingOrders")
 		
 		outstandingOrdersRouter.post(CreateData.self, use: create)
+		outstandingOrdersRouter.post(AttachConstructedItemsData.self, at: OutstandingOrder.parameter, "constructedItems", use: attachConstructedItems)
 		
 		outstandingOrdersRouter.put(OutstandingOrder.self, at: OutstandingOrder.parameter, use: update)
 	}
@@ -46,10 +55,14 @@ extension OutstandingOrderController {
 	struct CreateData: Content {
 		let constructedItems: [ConstructedItem.ID]?
 	}
+	
+	struct AttachConstructedItemsData: Content {
+		let ids: [ConstructedItem.ID]
+	}
 }
 
 private extension Future where T == (User, User.UID) {
 	func assertMatching(or error: Error) -> Future<Void> {
-		return thenThrowing { guard $0.0.uid == $0.1 else { throw error }; return }
+		return thenThrowing { guard $0.uid == $1 else { throw error }; return }
 	}
 }
