@@ -4,6 +4,12 @@ import FluentPostgreSQL
 final class OutstandingOrder: PostgreSQLUUIDModel {
 	var id: OutstandingOrder.ID?
 	var userID: User.ID?
+	
+	init(id: OutstandingOrder.ID? = nil,
+		 userID: User.ID? = nil) {
+		self.id = id
+		self.userID = userID
+	}
 }
 
 extension OutstandingOrder: Parameter {}
