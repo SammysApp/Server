@@ -6,17 +6,17 @@ final class OutstandingOrderController {
 	private let verifier = UserRequestVerifier()
 	
 	// MARK: - GET
-	private func getOne(_ req: Request) throws -> Future<OutstandingOrder> {
+	private func getOne(_ req: Request) throws -> Future<OutstandingOrderData> {
 		return try req.parameters.next(OutstandingOrder.self)
 			.flatMap { try self.verified($0, req: req) }
+			.map { try OutstandingOrderData($0) }
 	}
 	
 	// MARK: - POST
 	private func create(_ req: Request, data: CreateData)
-		throws -> Future<OutstandingOrder> {
+		throws -> Future<OutstandingOrderData> {
 		return try verified(data, req: req).then { data in
-			OutstandingOrder(userID: data.userID).create(on: req)
-				.flatMap { outstandingOrder in
+			OutstandingOrder(userID: data.userID).create(on: req).flatMap { outstandingOrder in
 				if let constructedItems = data.constructedItemIDs {
 					return ConstructedItem.query(on: req)
 						.filter(\.id ~~ constructedItems).all()
@@ -24,27 +24,28 @@ final class OutstandingOrderController {
 						.transform(to: outstandingOrder)
 				} else { return req.future(outstandingOrder) }
 			}
-		}
+		}.map { try OutstandingOrderData($0) }
 	}
 	
 	private func attachConstructedItems(_ req: Request, data: AttachConstructedItemsData)
-		throws -> Future<OutstandingOrder> {
+		throws -> Future<OutstandingOrderData> {
 		return try req.parameters.next(OutstandingOrder.self)
 			.flatMap { try self.verified($0, req: req) }
 			.and(ConstructedItem.query(on: req).filter(\.id ~~ data.ids).all())
 			.then { $0.constructedItems.attachAll($1, on: req).transform(to: $0) }
+			.map { try OutstandingOrderData($0) }
 	}
 	
 	// MARK: - PUT
 	private func update(_ req: Request, outstandingOrder: OutstandingOrder)
-		throws -> Future<OutstandingOrder> {
+		throws -> Future<OutstandingOrderData> {
 		return try req.parameters.next(OutstandingOrder.self).flatMap { existing in
 			outstandingOrder.id = try existing.requireID()
 			if let userID = outstandingOrder.userID {
 				return try self.verify(userID, req: req)
 					.then { outstandingOrder.update(on: req) }
 			} else { return outstandingOrder.update(on: req) }
-		}
+		}.map { try OutstandingOrderData($0) }
 	}
 	
 	// MARK: - Helper Methods
