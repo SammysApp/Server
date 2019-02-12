@@ -3,22 +3,26 @@ import Fluent
 import FluentPostgreSQL
 
 final class OutstandingOrderController {
-	let verifier = UserRequestVerifier()
+	private let verifier = UserRequestVerifier()
 	
 	// MARK: - GET
-	func create(_ req: Request, data: CreateData)
-		-> Future<OutstandingOrder> {
-		return OutstandingOrder().create(on: req).flatMap { outstandingOrder in
-			if let constructedItems = data.constructedItems {
-				return ConstructedItem.query(on: req).filter(\.id ~~ constructedItems).all()
-					.then { outstandingOrder.constructedItems.attachAll($0, on: req) }
-					.transform(to: outstandingOrder)
-			} else { return req.future(outstandingOrder) }
-		}
+	private func getOne(_ req: Request) throws -> Future<OutstandingOrder> {
+		return try req.parameters.next(OutstandingOrder.self)
 	}
 	
 	// MARK: - POST
-	func attachConstructedItems(_ req: Request, data: AttachConstructedItemsData)
+	private func create(_ req: Request, data: CreateData)
+		-> Future<OutstandingOrder> {
+			return OutstandingOrder().create(on: req).flatMap { outstandingOrder in
+				if let constructedItems = data.constructedItemIDs {
+					return ConstructedItem.query(on: req).filter(\.id ~~ constructedItems).all()
+						.then { outstandingOrder.constructedItems.attachAll($0, on: req) }
+						.transform(to: outstandingOrder)
+				} else { return req.future(outstandingOrder) }
+			}
+	}
+	
+	private func attachConstructedItems(_ req: Request, data: AttachConstructedItemsData)
 		throws -> Future<OutstandingOrder> {
 		return try req.parameters.next(OutstandingOrder.self)
 			.and(ConstructedItem.query(on: req).filter(\.id ~~ data.ids).all())
@@ -26,7 +30,7 @@ final class OutstandingOrderController {
 	}
 	
 	// MARK: - PUT
-	func update(_ req: Request, outstandingOrder: OutstandingOrder)
+	private func update(_ req: Request, outstandingOrder: OutstandingOrder)
 		throws -> Future<OutstandingOrder> {
 		return try req.parameters.next(OutstandingOrder.self).flatMap { existing in
 			outstandingOrder.id = try existing.requireID()
@@ -44,25 +48,25 @@ extension OutstandingOrderController: RouteCollection {
 		let outstandingOrdersRouter = router
 			.grouped("\(AppConstants.version)/outstandingOrders")
 		
+		// GET /outstandingOrders/:outstandingOrder
+		outstandingOrdersRouter.get(OutstandingOrder.parameter, use: getOne)
+		
+		// POST /outstandingOrders
 		outstandingOrdersRouter.post(CreateData.self, use: create)
+		// POST /outstandingOrders/:outstandingOrder/constructedItems
 		outstandingOrdersRouter.post(AttachConstructedItemsData.self, at: OutstandingOrder.parameter, "constructedItems", use: attachConstructedItems)
 		
+		// PUT /outstandingOrders/:outstandingOrder
 		outstandingOrdersRouter.put(OutstandingOrder.self, at: OutstandingOrder.parameter, use: update)
 	}
 }
 
-extension OutstandingOrderController {
+private extension OutstandingOrderController {
 	struct CreateData: Content {
-		let constructedItems: [ConstructedItem.ID]?
+		let constructedItemIDs: [ConstructedItem.ID]?
 	}
 	
 	struct AttachConstructedItemsData: Content {
 		let ids: [ConstructedItem.ID]
-	}
-}
-
-private extension Future where T == (User, User.UID) {
-	func assertMatching(or error: Error) -> Future<Void> {
-		return thenThrowing { guard $0.uid == $1 else { throw error }; return }
 	}
 }

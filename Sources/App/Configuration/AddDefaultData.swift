@@ -1,27 +1,6 @@
 import Vapor
 import FluentPostgreSQL
 
-private struct ItemData: Codable {
-	let id: Item.ID
-	let name: String
-}
-
-private struct CategoryData: Codable {
-	let id: Category.ID
-	let name: String
-	let isConstructable: Bool?
-	let items: [Item.ID]?
-	let subcategories: [CategoryData]?
-}
-
-private struct CategoryItemData: Codable {
-	let category: Category.ID
-	let item: Item.ID
-	let description: String?
-	let price: Int?
-	let modifiers: [Modifier]?
-}
-
 struct AddDefaultData {
 	private struct Constants {
 		static let baseFilesPath = "Sources/App/Configuration"
@@ -131,6 +110,29 @@ extension AddDefaultData: PostgreSQLMigration {
 	
 	static func revert(on conn: PostgreSQLConnection) -> Future<Void> {
 		return .done(on: conn)
+	}
+}
+
+private extension AddDefaultData {
+	struct ItemData: Codable {
+		let id: Item.ID
+		let name: String
+	}
+	
+	struct CategoryData: Codable {
+		let id: Category.ID
+		let name: String
+		let isConstructable: Bool?
+		let items: [Item.ID]?
+		let subcategories: [CategoryData]?
+	}
+	
+	struct CategoryItemData: Codable {
+		let category: Category.ID
+		let item: Item.ID
+		let description: String?
+		let price: Int?
+		let modifiers: [Modifier]?
 	}
 }
 

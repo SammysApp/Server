@@ -38,7 +38,7 @@ extension Category {
 
 extension Category {
 	var constructedItems: Children<Category, ConstructedItem> {
-		return children(\.parentCategoryID)
+		return children(\.categoryID)
 	}
 }
 

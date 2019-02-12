@@ -2,15 +2,20 @@ import Vapor
 import FluentPostgreSQL
 
 final class UserController {
-	let verifier = UserRequestVerifier()
+	private let verifier = UserRequestVerifier()
 	
 	// MARK: - GET
+	private func getOne(_ req: Request) throws -> Future<User> {
+		return try req.parameters.next(User.self)
+	}
+	
 	private func getConstructedItems(_ req: Request)
-		throws -> Future<[ConstructedItem]> {
+		throws -> Future<[ConstructedItemData]> {
 		return try verifier.verify(req)
 			.flatMap { try req.parameters.next(User.self)
 				.assert(has: $0, or: Abort(.unauthorized)) }
 			.flatMap { try self.constructedItems(for: $0, req: req) }
+			.flatMap { try $0.map { try self.constructedItemData(for: $0, req: req) }.flatten(on: req) }
 	}
 	
 	private func getOutstandingOrders(_ req: Request)
@@ -42,15 +47,26 @@ final class UserController {
 		throws -> Future<[OutstandingOrder]> {
 		return try user.outstandingOrders.query(on: req).all()
 	}
+	
+	private func constructedItemData(for constructedItem: ConstructedItem, req: Request)
+		throws -> Future<ConstructedItemData> {
+		return try constructedItem.totalPrice(on: req)
+			.map { try ConstructedItemData(constructedItem: constructedItem, totalPrice: $0) }
+	}
 }
 
 extension UserController: RouteCollection {
 	func boot(router: Router) throws {
 		let usersRouter = router.grouped("\(AppConstants.version)/users")
 		
+		// GET /users/:user
+		usersRouter.get(User.parameter, use: getOne)
+		// GET /users/:user/constructedItems
 		usersRouter.get(User.parameter, "constructedItems", use: getConstructedItems)
+		// GET /users/:user/outstandingOrders
 		usersRouter.get(User.parameter, "outstandingOrders", use: getOutstandingOrders)
 		
+		// POST /users
 		usersRouter.post(use: create)
 	}
 }
@@ -61,8 +77,20 @@ private extension UserController {
 	}
 }
 
-private extension Future where T == User {
-	func assert(has uid: User.UID, or error: Error) -> Future<User> {
-		return thenThrowing { guard $0.uid == uid else { throw error }; return $0 }
+private extension UserController {
+	struct ConstructedItemData: Content {
+		var id: ConstructedItem.ID
+		var categoryID: Category.ID
+		var userID: User.ID?
+		var isFavorite: Bool
+		var totalPrice: Int
+		
+		init(constructedItem: ConstructedItem, totalPrice: Int) throws {
+			self.id = try constructedItem.requireID()
+			self.categoryID = constructedItem.categoryID
+			self.userID = constructedItem.userID
+			self.isFavorite = constructedItem.isFavorite
+			self.totalPrice = totalPrice
+		}
 	}
 }
