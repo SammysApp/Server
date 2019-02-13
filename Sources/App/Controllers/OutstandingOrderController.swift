@@ -12,6 +12,15 @@ final class OutstandingOrderController {
 			.map { try OutstandingOrderData($0) }
 	}
 	
+	private func getConstructedItems(_ req: Request)
+		throws -> Future<[ConstructedItemData]> {
+		return try req.parameters.next(OutstandingOrder.self)
+			.flatMap { try self.verified($0, req: req) }
+			.flatMap { try $0.constructedItems.query(on: req)
+				.alsoDecode(OutstandingOrderConstructedItem.self).all() }
+			.map { try $0.map(ConstructedItemData.init) }
+	}
+	
 	// MARK: - POST
 	private func create(_ req: Request, data: CreateData)
 		throws -> Future<OutstandingOrderData> {
@@ -74,6 +83,8 @@ extension OutstandingOrderController: RouteCollection {
 		
 		// GET /outstandingOrders/:outstandingOrder
 		outstandingOrdersRouter.get(OutstandingOrder.parameter, use: getOne)
+		// GET /outstandingOrders/:outstandingOrder/constructedItems
+		outstandingOrdersRouter.get(OutstandingOrder.parameter, "constructedItems", use: getConstructedItems)
 		
 		// POST /outstandingOrders
 		outstandingOrdersRouter.post(CreateData.self, use: create)
@@ -102,6 +113,21 @@ private extension OutstandingOrderController {
 		
 		init(_ outstandingOrder: OutstandingOrder) throws {
 			self.id = try outstandingOrder.requireID()
+		}
+	}
+	
+	struct ConstructedItemData: Content {
+		let id: ConstructedItem.ID
+		let categoryID: Category.ID
+		let isFavorite: Bool
+		let quantity: Int
+		
+		init(constructedItem: ConstructedItem,
+			 outstandingOrderConstructedItem: OutstandingOrderConstructedItem) throws {
+			self.id = try constructedItem.requireID()
+			self.categoryID = constructedItem.categoryID
+			self.isFavorite = constructedItem.isFavorite
+			self.quantity = outstandingOrderConstructedItem.quantity
 		}
 	}
 }
