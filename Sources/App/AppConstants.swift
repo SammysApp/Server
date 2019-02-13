@@ -19,6 +19,12 @@ struct AppConstants {
 		}
 	}
 	
+	struct MongoDB {
+		struct Local {
+			static let uri = "mongodb://localhost:27017/sammys"
+		}
+	}
+	
 	struct Firebase {
 		static let projectName = "sammys-73b4d"
 	}
