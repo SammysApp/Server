@@ -4,6 +4,8 @@ import FluentPostgreSQL
 final class OutstandingOrder: PostgreSQLUUIDModel {
 	var id: OutstandingOrder.ID?
 	var userID: User.ID?
+	var preparedForDate: Date?
+	var note: String?
 	
 	init(id: OutstandingOrder.ID? = nil,
 		 userID: User.ID? = nil) {

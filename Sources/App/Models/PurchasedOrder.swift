@@ -3,14 +3,39 @@ import FluentPostgreSQL
 
 final class PurchasedOrder: PostgreSQLUUIDModel {
 	var id: PurchasedOrder.ID?
-	var number: Int
+	var number: Int?
 	var userID: User.ID
 	var purchasedDate: Date
-	var preparedDate: Date?
+	var preparedForDate: Date?
 	var note: String?
-	var progress: OrderProgress = .isPending
+	
+	init(id: PurchasedOrder.ID? = nil,
+		 number: Int? = nil,
+		 userID: User.ID,
+		 purchasedDate: Date,
+		 preparedForDate: Date? = nil,
+		 note: String? = nil) {
+		self.id = id
+		self.number = number
+		self.userID = userID
+		self.purchasedDate = purchasedDate
+		self.preparedForDate = preparedForDate
+		self.note = note
+	}
 }
 
 extension PurchasedOrder: Parameter {}
 extension PurchasedOrder: Content {}
-extension PurchasedOrder: Migration {}
+
+extension PurchasedOrder: Migration {
+	static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
+		return Database.create(PurchasedOrder.self, on: conn) { creator in
+			creator.field(for: \.id, isIdentifier: true)
+			creator.field(for: \.number, type: .serial)
+			creator.field(for: \.userID)
+			creator.field(for: \.purchasedDate)
+			creator.field(for: \.preparedForDate)
+			creator.field(for: \.note)
+		}
+	}
+}
