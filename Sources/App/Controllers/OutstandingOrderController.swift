@@ -57,6 +57,19 @@ final class OutstandingOrderController {
 		}.map { try OutstandingOrderData($0) }
 	}
 	
+	// MARK: - PATCH
+	private func partiallyUpdateConstructedItem(_ req: Request, data: PartialConstructedItemUpdateData) throws -> Future<ConstructedItemData> {
+		return try req.parameters.next(OutstandingOrder.self)
+			.flatMap { try self.verified($0, req: req) }
+			.and(req.parameters.next(ConstructedItem.self))
+			.flatMap { try $0.pivot(attaching: $1, on: req).and(result: $1) }
+			.flatMap { pivot, constructedItem in
+				guard let pivot = pivot else { throw Abort(.badRequest) }
+				if let quantity = data.quantity { pivot.quantity = quantity }
+				return try pivot.update(on: req).transform(to: ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: pivot))
+			}
+	}
+	
 	// MARK: - Helper Methods
 	private func verified(_ outstandingOrder: OutstandingOrder, req: Request)
 		throws -> Future<OutstandingOrder> {
@@ -93,6 +106,9 @@ extension OutstandingOrderController: RouteCollection {
 		
 		// PUT /outstandingOrders/:outstandingOrder
 		outstandingOrdersRouter.put(OutstandingOrder.self, at: OutstandingOrder.parameter, use: update)
+		
+		// PATCH /outstandingOrders/:outstandingOrder/constructedItems/:constructedItem
+		outstandingOrdersRouter.patch(PartialConstructedItemUpdateData.self, at: OutstandingOrder.parameter, "constructedItems", ConstructedItem.parameter, use: partiallyUpdateConstructedItem)
 	}
 }
 
@@ -104,6 +120,10 @@ private extension OutstandingOrderController {
 	
 	struct AttachConstructedItemsData: Content {
 		let ids: [ConstructedItem.ID]
+	}
+	
+	struct PartialConstructedItemUpdateData: Content {
+		let quantity: Int?
 	}
 }
 

@@ -19,3 +19,12 @@ extension OutstandingOrder: Migration {}
 extension OutstandingOrder {
 	var constructedItems: Siblings<OutstandingOrder, ConstructedItem, OutstandingOrderConstructedItem> { return siblings() }
 }
+
+extension OutstandingOrder {
+	func pivot(attaching constructedItem: ConstructedItem, on conn: DatabaseConnectable) throws -> Future<OutstandingOrderConstructedItem?> {
+		return try constructedItems.pivots(on: conn)
+			.filter(\.outstandingOrderID == requireID())
+			.filter(\.constructedItemID == constructedItem.requireID())
+			.first()
+	}
+}

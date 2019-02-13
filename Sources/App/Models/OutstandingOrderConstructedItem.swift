@@ -21,4 +21,3 @@ final class OutstandingOrderConstructedItem: PostgreSQLUUIDPivot, ModifiablePivo
 }
 
 extension OutstandingOrderConstructedItem: Migration {}
-
