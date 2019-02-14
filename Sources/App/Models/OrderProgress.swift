@@ -1,5 +1,8 @@
-import Foundation
+import Vapor
+import FluentPostgreSQL
 
-enum OrderProgress: String, Codable {
+enum OrderProgress: String, PostgreSQLEnum {
 	case isPending, isInProgress, isCompleted
 }
+
+extension OrderProgress: PostgreSQLMigration {}

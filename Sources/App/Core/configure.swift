@@ -45,6 +45,8 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	// Configure migrations.
 	var migrations = MigrationConfig()
 	
+	migrations.add(migration: OrderProgress.self, database: .psql)
+	
 	migrations.add(model: Category.self, database: .psql)
 	migrations.add(model: Item.self, database: .psql)
 	migrations.add(model: CategoryItem.self, database: .psql)
