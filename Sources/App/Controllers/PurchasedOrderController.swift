@@ -12,7 +12,9 @@ final class PurchasedOrderController {
 		return try verifiedUser(data.userID, req: req)
 			.and(OutstandingOrder.find(data.outstandingOrderID, on: req)
 				.unwrap(or: Abort(.badRequest)))
-			.map(self.purchasedOrder).flatMap { $0.create(on: req) }
+			.thenThrowing { guard $1.userID == $0.id else { throw Abort(.unauthorized) }; return ($0, $1) }
+			.flatMap { try self.createCharge(for: $1, user: $0, source: data.source, req: req).and(result: ($0, $1)) }
+			.map { try self.purchasedOrder(userID: $1.0.requireID(), chargeID: $0.id, outstandingOrder: $1.1) }
 	}
 	
 	// MARK: - Helper Methods
@@ -21,15 +23,20 @@ final class PurchasedOrderController {
 			.connect(AppConstants.MongoDB.Local.uri, on: req.eventLoop)
 	}
 	
-	func stripeClient(_ req: Request) throws -> StripeClient {
+	private func stripeClient(_ req: Request) throws -> StripeClient {
 		return try req.make(StripeClient.self)
 	}
 	
-	private func purchasedOrder(user: User, outstandingOrder: OutstandingOrder)
-		throws -> PurchasedOrder {
-		return try PurchasedOrder(
-			userID: user.requireID(),
-			chargeID: "",
+	private func createCharge(for outstandingOrder: OutstandingOrder, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {
+		return try outstandingOrder.totalPrice(on: req).flatMap {
+			try self.stripeClient(req).charge.create(amount: $0, currency: .usd, receiptEmail: user.email, customer: user.customerID, source: source)
+		}
+	}
+	
+	private func purchasedOrder(userID: User.ID, chargeID: String, outstandingOrder: OutstandingOrder) -> PurchasedOrder {
+		return PurchasedOrder(
+			userID: userID,
+			chargeID: chargeID,
 			purchasedDate: Date(),
 			preparedForDate: outstandingOrder.preparedForDate,
 			note: outstandingOrder.note)

@@ -30,3 +30,17 @@ extension OutstandingOrder {
 			.first()
 	}
 }
+
+extension OutstandingOrder {
+	func totalPrice(on conn: DatabaseConnectable) throws -> Future<Int> {
+		return try totalConstructedItemsPrice(on: conn)
+	}
+	
+	private func totalConstructedItemsPrice(on conn: DatabaseConnectable)
+		throws -> Future<Int> {
+		return try constructedItems.query(on: conn).all().flatMap { constructedItems in
+			return try constructedItems.map { try $0.totalPrice(on: conn) }
+				.flatten(on: conn).map { $0.reduce(0, +) }
+		}
+	}
+}

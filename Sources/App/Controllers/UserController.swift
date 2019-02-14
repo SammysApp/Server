@@ -35,7 +35,7 @@ final class UserController {
 	}
 	
 	// MARK: - Helper Methods
-	func stripeClient(_ req: Request) throws -> StripeClient {
+	private func stripeClient(_ req: Request) throws -> StripeClient {
 		return try req.make(StripeClient.self)
 	}
 	

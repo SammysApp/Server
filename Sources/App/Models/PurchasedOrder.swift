@@ -38,6 +38,7 @@ extension PurchasedOrder: Migration {
 		return Database.create(PurchasedOrder.self, on: conn) { creator in
 			creator.field(for: \.id, isIdentifier: true)
 			creator.field(for: \.number, type: .serial)
+			creator.field(for: \.chargeID)
 			creator.field(for: \.userID)
 			creator.field(for: \.purchasedDate)
 			creator.field(for: \.preparedForDate)
