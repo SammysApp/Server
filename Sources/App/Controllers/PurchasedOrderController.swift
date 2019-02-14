@@ -12,9 +12,9 @@ final class PurchasedOrderController {
 		return try verifiedUser(data.userID, req: req)
 			.and(OutstandingOrder.find(data.outstandingOrderID, on: req)
 				.unwrap(or: Abort(.badRequest)))
-			.thenThrowing { guard $1.userID == $0.id else { throw Abort(.unauthorized) }; return ($0, $1) }
+			.guard({ $1.userID == $0.id }, else: Abort(.unauthorized))
 			.flatMap { try self.createCharge(for: $1, user: $0, source: data.source, req: req).and(result: ($0, $1)) }
-			.map { try self.purchasedOrder(userID: $1.0.requireID(), chargeID: $0.id, outstandingOrder: $1.1) }
+			.flatMap { try self.purchasedOrder(userID: $1.0.requireID(), chargeID: $0.id, outstandingOrder: $1.1).create(on: req) }
 	}
 	
 	// MARK: - Helper Methods
@@ -29,7 +29,7 @@ final class PurchasedOrderController {
 	
 	private func createCharge(for outstandingOrder: OutstandingOrder, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {
 		return try outstandingOrder.totalPrice(on: req).flatMap {
-			try self.stripeClient(req).charge.create(amount: $0, currency: .usd, receiptEmail: user.email, customer: user.customerID, source: source)
+			try self.stripeClient(req).charge.create(amount: $0, currency: .usd, customer: user.customerID, source: source)
 		}
 	}
 	
