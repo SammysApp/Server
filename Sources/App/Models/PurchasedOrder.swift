@@ -4,6 +4,7 @@ import FluentPostgreSQL
 final class PurchasedOrder: PostgreSQLUUIDModel {
 	var id: PurchasedOrder.ID?
 	var number: Int?
+	var chargeID: String
 	var userID: User.ID
 	var purchasedDate: Date
 	var preparedForDate: Date?
@@ -13,12 +14,14 @@ final class PurchasedOrder: PostgreSQLUUIDModel {
 	init(id: PurchasedOrder.ID? = nil,
 		 number: Int? = nil,
 		 userID: User.ID,
+		 chargeID: String,
 		 purchasedDate: Date,
 		 preparedForDate: Date? = nil,
 		 note: String? = nil,
 		 progress: OrderProgress = .isPending) {
 		self.id = id
 		self.number = number
+		self.chargeID = chargeID
 		self.userID = userID
 		self.purchasedDate = purchasedDate
 		self.preparedForDate = preparedForDate

@@ -1,5 +1,6 @@
 import Vapor
 import FluentPostgreSQL
+import Stripe
 
 final class UserController {
 	private let verifier = UserRequestVerifier()
@@ -27,11 +28,17 @@ final class UserController {
 	}
 	
 	// MARK: - POST
-	private func create(_ req: Request) throws -> Future<User> {
-		return try verifier.verify(req).flatMap { User(uid: $0).create(on: req) }
+	private func create(_ req: Request, data: CreateData) throws -> Future<User> {
+		return try verifier.verify(req)
+			.and(self.stripeClient(req).customer.create(email: data.email))
+			.flatMap { User(uid: $0, customerID: $1.id, email: data.email, name: data.name).create(on: req) }
 	}
 	
 	// MARK: - Helper Methods
+	func stripeClient(_ req: Request) throws -> StripeClient {
+		return try req.make(StripeClient.self)
+	}
+	
 	private func constructedItems(for user: User, req: Request)
 		throws -> Future<[ConstructedItem]> {
 		var databaseQuery = try user.constructedItems.query(on: req)
@@ -67,7 +74,14 @@ extension UserController: RouteCollection {
 		usersRouter.get(User.parameter, "outstandingOrders", use: getOutstandingOrders)
 		
 		// POST /users
-		usersRouter.post(use: create)
+		usersRouter.post(CreateData.self, use: create)
+	}
+}
+
+private extension UserController {
+	struct CreateData: Content {
+		let email: String
+		let name: String
 	}
 }
 

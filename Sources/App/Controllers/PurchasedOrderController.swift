@@ -1,6 +1,7 @@
 import Vapor
 import FluentPostgreSQL
 import MongoKitten
+import Stripe
 
 final class PurchasedOrderController {
 	private let verifier = UserRequestVerifier()
@@ -20,10 +21,15 @@ final class PurchasedOrderController {
 			.connect(AppConstants.MongoDB.Local.uri, on: req.eventLoop)
 	}
 	
+	func stripeClient(_ req: Request) throws -> StripeClient {
+		return try req.make(StripeClient.self)
+	}
+	
 	private func purchasedOrder(user: User, outstandingOrder: OutstandingOrder)
 		throws -> PurchasedOrder {
 		return try PurchasedOrder(
 			userID: user.requireID(),
+			chargeID: "",
 			purchasedDate: Date(),
 			preparedForDate: outstandingOrder.preparedForDate,
 			note: outstandingOrder.note)
@@ -46,6 +52,7 @@ extension PurchasedOrderController: RouteCollection {
 private extension PurchasedOrderController {
 	struct CreateData: Content {
 		let userID: User.ID
+		let source: String?
 		let outstandingOrderID: OutstandingOrder.ID
 	}
 }

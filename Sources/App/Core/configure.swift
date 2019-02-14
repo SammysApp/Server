@@ -34,14 +34,6 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	databases.add(database: postgres, as: .psql)
 	services.register(databases)
 	
-	// Configure Stripe.
-	let stripeCofig = StripeConfig(
-		productionKey: AppSecrets.Stripe.liveKey,
-		testKey: AppSecrets.Stripe.testKey
-	)
-	services.register(stripeCofig)
-	try services.register(StripeProvider())
-	
 	// Configure migrations.
 	var migrations = MigrationConfig()
 	
@@ -62,4 +54,12 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	migrations.add(model: PurchasedOrder.self, database: .psql)
 	
 	services.register(migrations)
+	
+	// Configure Stripe.
+	let stripeCofig = StripeConfig(
+		productionKey: AppSecrets.Stripe.liveKey,
+		testKey: AppSecrets.Stripe.testKey
+	)
+	services.register(stripeCofig)
+	try services.register(StripeProvider())
 }
