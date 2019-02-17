@@ -38,7 +38,9 @@ final class PurchasedOrderController {
 
     private func verifiedUser(_ userID: User.ID, req: Request) throws -> Future<User> {
         return User.find(userID, on: req).unwrap(or: Abort(.badRequest))
-            .and(try verifier.verify(req)).assertMatching(or: Abort(.unauthorized))
+            .and(try verifier.verify(req))
+            .guard({ $0.uid == $1 }, else: Abort(.unauthorized))
+            .map { user, _ in user }
     }
 
     private func createCharge(for amount: Int, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {

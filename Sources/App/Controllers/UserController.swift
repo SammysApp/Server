@@ -12,16 +12,16 @@ final class UserController {
     
     private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemData]> {
         return try verifier.verify(req)
-            .flatMap { try req.parameters.next(User.self)
-                .assert(has: $0, or: Abort(.unauthorized)) }
+            .flatMap { uid in try req.parameters.next(User.self)
+                .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
             .flatMap { try self.constructedItems(for: $0, req: req) }
             .flatMap { try $0.map { try self.constructedItemData(for: $0, req: req) }.flatten(on: req) }
     }
     
     private func getOutstandingOrders(_ req: Request) throws -> Future<[OutstandingOrder]> {
         return try verifier.verify(req)
-            .flatMap { try req.parameters.next(User.self)
-                .assert(has: $0, or: Abort(.unauthorized)) }
+            .flatMap { uid in try req.parameters.next(User.self)
+                .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
             .flatMap { try self.outstandingOrders(for: $0, req: req) }
     }
     

@@ -56,7 +56,8 @@ final class ConstructedItemController {
 
     private func verify(_ userID: User.ID, req: Request) throws -> Future<Void> {
         return User.find(userID, on: req).unwrap(or: Abort(.badRequest))
-            .and(try verifier.verify(req)).assertMatching(or: Abort(.unauthorized))
+            .and(try verifier.verify(req))
+            .guard({ $0.uid == $1 }, else: Abort(.unauthorized)).transform(to: ())
     }
 }
 
