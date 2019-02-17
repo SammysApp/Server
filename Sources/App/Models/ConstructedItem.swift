@@ -23,7 +23,7 @@ extension ConstructedItem: Content {}
 extension ConstructedItem: Migration {}
 
 extension ConstructedItem {
-	var category: Parent<ConstructedItem, Category>? {
+	var category: Parent<ConstructedItem, Category> {
 		return parent(\.categoryID)
 	}
 }

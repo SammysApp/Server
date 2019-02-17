@@ -6,7 +6,7 @@ import Stripe
 final class PurchasedOrderController {
 	private let verifier = UserRequestVerifier()
 	
-	enum CollectionNames: String, CollectionName {
+	private enum CollectionNames: String, CollectionName {
 		case purchasedOrders
 	}
 	
@@ -36,15 +36,20 @@ final class PurchasedOrderController {
 	private func insert(_ purchasedOrder: PurchasedOrder, constructedItems: [ConstructedItem], req: Request) -> Future<Void> {
 		let categorizedItemsCreator = ConstructedItemCategorizedItemsCreator()
 		return database(req).flatMap { database in
-			try constructedItems.map { try categorizedItemsCreator.create(for: $0, on: req) }.flatten(on: req)
-				.map { $0.map { (UUID().uuidString, $0) } }
-				.map { Dictionary(uniqueKeysWithValues: $0) }
-				.map { try PurchasedOrderDocumentData(purchasedOrderID: purchasedOrder.requireID(), constructedItems: $0) }
-				.map { try BSONEncoder().encode($0) }
-				.flatMap { database[CollectionNames.purchasedOrders].insert($0) }
-				.transform(to: ())
+			try constructedItems.map {
+                try $0.category.get(on: req)
+                .and(categorizedItemsCreator.create(for: $0, on: req))
+            }.flatten(on: req).map {
+                try PurchasedOrderDocumentData(purchasedOrderID: purchasedOrder.requireID(), constructedItems: $0.map(self.constructedItemDocumentData))
+            }.map { try BSONEncoder().encode($0) }
+            .flatMap { database[CollectionNames.purchasedOrders].insert($0) }
+            .transform(to: ())
 		}
 	}
+    
+    private func constructedItemDocumentData(category: Category, items: [ConstructedItemCategorizedItems]) throws -> ConstructedItemDocumentData {
+        return try ConstructedItemDocumentData(id: UUID(), category: CategoryDocumentData(id: category.requireID(), name: category.name), items: items)
+    }
 	
 	private func createCharge(for outstandingOrder: OutstandingOrder, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {
 		return try outstandingOrder.totalPrice(on: req).flatMap {
@@ -86,6 +91,17 @@ private extension PurchasedOrderController {
 private extension PurchasedOrderController {
 	struct PurchasedOrderDocumentData: Codable {
 		let purchasedOrderID: PurchasedOrder.ID
-		let constructedItems: [String : [ConstructedItemCategorizedItems]]
+		let constructedItems: [ConstructedItemDocumentData]
 	}
+    
+    struct ConstructedItemDocumentData: Codable {
+        let id: UUID
+        let category: CategoryDocumentData
+        let items: [ConstructedItemCategorizedItems]
+    }
+    
+    struct CategoryDocumentData: Codable {
+        let id: Category.ID
+        let name: String
+    }
 }
