@@ -4,8 +4,9 @@ import FluentPostgreSQL
 final class PurchasedOrder: PostgreSQLUUIDModel {
 	var id: PurchasedOrder.ID?
 	var number: Int?
-	var chargeID: String
 	var userID: User.ID
+    var chargeID: String
+    var totalPrice: Int
 	var purchasedDate: Date
 	var preparedForDate: Date?
 	var note: String?
@@ -13,16 +14,18 @@ final class PurchasedOrder: PostgreSQLUUIDModel {
 	
 	init(id: PurchasedOrder.ID? = nil,
 		 number: Int? = nil,
-		 userID: User.ID,
-		 chargeID: String,
+         userID: User.ID,
+         chargeID: String,
+         totalPrice: Int,
 		 purchasedDate: Date,
 		 preparedForDate: Date? = nil,
 		 note: String? = nil,
 		 progress: OrderProgress = .isPending) {
 		self.id = id
 		self.number = number
+        self.userID = userID
 		self.chargeID = chargeID
-		self.userID = userID
+        self.totalPrice = totalPrice
 		self.purchasedDate = purchasedDate
 		self.preparedForDate = preparedForDate
 		self.note = note
@@ -38,8 +41,9 @@ extension PurchasedOrder: Migration {
 		return Database.create(PurchasedOrder.self, on: conn) { creator in
 			creator.field(for: \.id, isIdentifier: true)
 			creator.field(for: \.number, type: .serial)
+            creator.field(for: \.userID)
 			creator.field(for: \.chargeID)
-			creator.field(for: \.userID)
+            creator.field(for: \.totalPrice)
 			creator.field(for: \.purchasedDate)
 			creator.field(for: \.preparedForDate)
 			creator.field(for: \.note)

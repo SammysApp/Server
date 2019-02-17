@@ -16,11 +16,15 @@ final class PurchasedOrderController {
 		return try verifiedUser(data.userID, req: req)
 			.and(OutstandingOrder.find(data.outstandingOrderID, on: req)
 				.unwrap(or: Abort(.badRequest)))
-			.guard({ $1.userID == $0.id }, else: Abort(.unauthorized))
-			.flatMap { try self.createCharge(for: $1, user: $0, source: data.source, req: req).and(result: ($0, $1)) }
-			.flatMap { try self.purchasedOrder(userID: $1.0.requireID(), chargeID: $0.id, outstandingOrder: $1.1).create(on: req)
-				.and($1.1.constructedItems.query(on: req).all()) }
-			.flatMap { self.insert($0, constructedItems: $1, req: req).transform(to: $0) }
+			.guard({ $0.id == $1.userID }, else: Abort(.unauthorized))
+            .flatMap { user, outstandingOrder in
+                try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
+                    try self.createCharge(for: totalPrice, user: user, source: data.source, req: req)
+                        .flatMap { try self.purchasedOrder(user: user, charge: $0, totalPrice: totalPrice, outstandingOrder: outstandingOrder).create(on: req) }
+                        .and(outstandingOrder.constructedItems.query(on: req).all())
+                        .flatMap { self.insert(purchasedOrder: $0, constructedItems: $1, req: req).transform(to: $0) }
+                }
+            }
 	}
 	
 	// MARK: - Helper Methods
@@ -32,50 +36,53 @@ final class PurchasedOrderController {
 	private func stripeClient(_ req: Request) throws -> StripeClient {
 		return try req.make(StripeClient.self)
 	}
-	
-	private func insert(_ purchasedOrder: PurchasedOrder, constructedItems: [ConstructedItem], req: Request) -> Future<Void> {
-		let categorizedItemsCreator = ConstructedItemCategorizedItemsCreator()
-		return database(req).flatMap { database in
-			try constructedItems.map {
-                try $0.category.get(on: req)
-                .and(categorizedItemsCreator.create(for: $0, on: req))
-            }.flatten(on: req).map {
-                try PurchasedOrderDocumentData(purchasedOrderID: purchasedOrder.requireID(), constructedItems: $0.map(self.constructedItemDocumentData))
-            }.map { try BSONEncoder().encode($0) }
-            .flatMap { database[CollectionNames.purchasedOrders].insert($0) }
-            .transform(to: ())
-		}
-	}
     
-    private func constructedItemDocumentData(category: Category, items: [ConstructedItemCategorizedItems]) throws -> ConstructedItemDocumentData {
-        return try ConstructedItemDocumentData(id: UUID(), category: CategoryDocumentData(id: category.requireID(), name: category.name), items: items)
+    private func verifiedUser(_ userID: User.ID, req: Request) throws -> Future<User> {
+        return User.find(userID, on: req).unwrap(or: Abort(.badRequest))
+            .and(try verifier.verify(req)).assertMatching(or: Abort(.unauthorized))
     }
 	
-	private func createCharge(for outstandingOrder: OutstandingOrder, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {
-		return try outstandingOrder.totalPrice(on: req).flatMap {
-			try self.stripeClient(req).charge.create(amount: $0, currency: .usd, customer: user.customerID, source: source)
-		}
+	private func createCharge(for amount: Int, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {
+		return try self.stripeClient(req).charge.create(amount: amount, currency: .usd, customer: user.customerID, source: source)
 	}
 	
-	private func purchasedOrder(userID: User.ID, chargeID: String, outstandingOrder: OutstandingOrder) -> PurchasedOrder {
+    private func purchasedOrder(user: User, charge: StripeCharge, totalPrice: Int, outstandingOrder: OutstandingOrder) throws -> PurchasedOrder {
 		return PurchasedOrder(
-			userID: userID,
-			chargeID: chargeID,
+			userID: try user.requireID(),
+			chargeID: charge.id,
+            totalPrice: totalPrice,
 			purchasedDate: Date(),
 			preparedForDate: outstandingOrder.preparedForDate,
 			note: outstandingOrder.note)
 	}
-	
-	private func verifiedUser(_ userID: User.ID, req: Request) throws -> Future<User> {
-		return User.find(userID, on: req).unwrap(or: Abort(.badRequest))
-			.and(try verifier.verify(req)).assertMatching(or: Abort(.unauthorized))
-	}
+    
+    private func constructedItemDocumentData(category: Category, totalPrice: Int, items: [ConstructedItemCategorizedItems]) throws -> ConstructedItemDocumentData {
+        return try ConstructedItemDocumentData(id: UUID(), totalPrice: totalPrice, category: CategoryDocumentData(id: category.requireID(), name: category.name), items: items)
+    }
+    
+    private func insert(purchasedOrder: PurchasedOrder, constructedItems: [ConstructedItem], req: Request) -> Future<Void> {
+        let categorizedItemsCreator = ConstructedItemCategorizedItemsCreator()
+        return database(req).flatMap { database in
+            try constructedItems.map {
+                try $0.category.get(on: req)
+                    .and($0.totalPrice(on: req))
+                    .and(categorizedItemsCreator.create(for: $0, on: req))
+                    .map { let ((category, totalPrice), items) = $0
+                        return try self.constructedItemDocumentData(category: category, totalPrice: totalPrice, items: items)
+                }}.flatten(on: req).map {
+                    try PurchasedOrderDocumentData(purchasedOrderID: purchasedOrder.requireID(), constructedItems: $0)
+                }.map { try BSONEncoder().encode($0) }
+                .flatMap { database[CollectionNames.purchasedOrders].insert($0) }
+                .transform(to: ())
+        }
+    }
 }
 
 extension PurchasedOrderController: RouteCollection {
 	func boot(router: Router) throws {
 		let purchasedOrdersRouter = router.grouped("\(AppConstants.version)/purchasedOrders")
 		
+        // POST /purchasedOrders
 		purchasedOrdersRouter.post(CreateData.self, use: create)
 	}
 }
@@ -96,6 +103,7 @@ private extension PurchasedOrderController {
     
     struct ConstructedItemDocumentData: Codable {
         let id: UUID
+        let totalPrice: Int
         let category: CategoryDocumentData
         let items: [ConstructedItemCategorizedItems]
     }
