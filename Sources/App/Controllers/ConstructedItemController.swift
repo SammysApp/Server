@@ -10,10 +10,10 @@ final class ConstructedItemController {
     private func getOne(_ req: Request) throws -> Future<ConstructedItemData> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }
-            .flatMap { try self.constructedItemData(for: $0, req: req) }
+            .flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
 
-    private func categorizedItems(_ req: Request) throws -> Future<Response> {
+    private func getCategorizedItems(_ req: Request) throws -> Future<Response> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }
             .flatMap { try self.categorizedItemsCreator.create(for: $0, on: req) }
@@ -35,11 +35,11 @@ final class ConstructedItemController {
                 return constructedItem.categoryItems.attachAll(categoryItems, on: req)
                     .and(constructedItem.modifiers.attachAll(modifiers, on: req))
                     .transform(to: constructedItem)
-            }.flatMap { try self.constructedItemData(for: $0, req: req) }
+            }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
 
     // MARK: - Helper Methods
-    private func constructedItemData(for constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
+    private func makeConstructedItemData(constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
         return try constructedItem.totalPrice(on: req)
             .map { try ConstructedItemData(constructedItem: constructedItem, totalPrice: $0) }
     }
@@ -69,7 +69,7 @@ extension ConstructedItemController: RouteCollection {
         // GET /constructedItems/:constructedItem
         constructedItemsRouter.get(ConstructedItem.parameter, use: getOne)
         // GET /constructedItems/:constructedItem/categorizedItems
-        constructedItemsRouter.get(ConstructedItem.parameter, "categorizedItems", use: categorizedItems)
+        constructedItemsRouter.get(ConstructedItem.parameter, "categorizedItems", use: getCategorizedItems)
         
         // POST /constructedItems
         constructedItemsRouter.post(CreateData.self, use: create)

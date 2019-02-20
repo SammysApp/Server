@@ -14,15 +14,15 @@ final class UserController {
         return try verifier.verify(req)
             .flatMap { uid in try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
-            .flatMap { try self.constructedItems(for: $0, req: req) }
-            .flatMap { try $0.map { try self.constructedItemData(for: $0, req: req) }.flatten(on: req) }
+            .flatMap { try self.queryConstructedItems(user: $0, req: req) }
+            .flatMap { try $0.map { try self.makeConstructedItemData(constructedItem: $0, req: req) }.flatten(on: req) }
     }
     
     private func getOutstandingOrders(_ req: Request) throws -> Future<[OutstandingOrder]> {
         return try verifier.verify(req)
             .flatMap { uid in try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
-            .flatMap { try self.outstandingOrders(for: $0, req: req) }
+            .flatMap { try self.makeOutstandingOrders(user: $0, req: req) }
     }
     
     // MARK: - POST
@@ -37,7 +37,7 @@ final class UserController {
         return try req.make(StripeClient.self)
     }
     
-    private func constructedItems(for user: User, req: Request) throws -> Future<[ConstructedItem]> {
+    private func queryConstructedItems(user: User, req: Request) throws -> Future<[ConstructedItem]> {
         var databaseQuery = try user.constructedItems.query(on: req)
         if let requestQuery = try? req.query.decode(ConstructedItemsQuery.self) {
             if let isFavorite = requestQuery.isFavorite {
@@ -47,11 +47,11 @@ final class UserController {
         return databaseQuery.all()
     }
     
-    private func outstandingOrders(for user: User, req: Request) throws -> Future<[OutstandingOrder]> {
+    private func makeOutstandingOrders(user: User, req: Request) throws -> Future<[OutstandingOrder]> {
         return try user.outstandingOrders.query(on: req).all()
     }
     
-    private func constructedItemData(for constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
+    private func makeConstructedItemData(constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
         return try constructedItem.totalPrice(on: req)
             .map { try ConstructedItemData(constructedItem: constructedItem, totalPrice: $0) }
     }

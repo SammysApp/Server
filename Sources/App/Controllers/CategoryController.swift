@@ -12,7 +12,7 @@ final class CategoryController {
             }
         }
         return databaseQuery.all()
-            .flatMap { try self.categoryDataArray(for: $0, req: req) }
+            .flatMap { try self.makeCategoryDataArray(categories: $0, req: req) }
     }
 
     private func getOne(_ req: Request) throws -> Future<Category> {
@@ -22,13 +22,13 @@ final class CategoryController {
     private func getSubcategories(_ req: Request) throws -> Future<[CategoryData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.subcategories.query(on: req).all() }
-            .flatMap { try self.categoryDataArray(for: $0, req: req) }
+            .flatMap { try self.makeCategoryDataArray(categories: $0, req: req) }
     }
 
     private func getItems(_ req: Request) throws -> Future<[ItemData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.items.query(on: req).alsoDecode(CategoryItem.self).all() }
-            .flatMap { try self.itemDataArray(for: $0, req: req) }
+            .flatMap { try self.makeItemDataArray(itemCategoryItemPairs: $0, req: req) }
             .map { $0.sorted() }
     }
 
@@ -41,7 +41,7 @@ final class CategoryController {
     }
 
     // MARK: - Helper Methods
-    private func categoryDataArray(for categories: [Category], req: Request) throws
+    private func makeCategoryDataArray(categories: [Category], req: Request) throws
         -> Future<[CategoryData]> {
         return try categories.map { category in
             try category.subcategories.query(on: req)
@@ -50,13 +50,13 @@ final class CategoryController {
             }.flatten(on: req)
     }
 
-    private func itemDataArray(for itemCategoryItemPairs: [(Item, CategoryItem)], req: Request) throws -> Future<[ItemData]> {
+    private func makeItemDataArray(itemCategoryItemPairs: [(Item, CategoryItem)], req: Request) throws -> Future<[ItemData]> {
         return try itemCategoryItemPairs
-            .map { try self.itemData(for: $0, categoryItem: $1, req: req) }
+            .map { try self.makeItemData(item: $0, categoryItem: $1, req: req) }
             .flatten(on: req)
     }
 
-    private func itemData(for item: Item, categoryItem: CategoryItem, req: Request) throws -> Future<ItemData> {
+    private func makeItemData(item: Item, categoryItem: CategoryItem, req: Request) throws -> Future<ItemData> {
         return try categoryItem.modifiers.query(on: req)
             .count().map { $0 > 0 }
             .thenThrowing { try ItemData(item: item, categoryItem: categoryItem, isModifiable: $0) }

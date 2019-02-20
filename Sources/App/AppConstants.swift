@@ -26,6 +26,6 @@ struct AppConstants {
     }
     
     struct Firebase {
-        static let projectName = "sammys-73b4d"
+        static let projectName = "sammys-prog"
     }
 }

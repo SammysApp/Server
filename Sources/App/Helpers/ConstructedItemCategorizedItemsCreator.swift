@@ -17,7 +17,7 @@ struct ConstructedItemCategorizedItemsCreator {
                     .filter(\.parentCategoryItemID == categoryItem.id).all()
                     .map { try $0.map { try ConstructedItemCategorizedModifierData($0) } }
                     .map { try (ConstructedItemCategorizedCategoryData(category), ConstructedItemCategorizedItemData(item: item, categoryItem: categoryItem, modifiers: ($0.isEmpty ? nil : $0))) }
-                }.flatten(on: conn) }.map { self.categorizer.categorizedItems(from: $0) }
+                }.flatten(on: conn) }.map { self.categorizer.makeCategorizedItems(pairs: $0) }
     }
 }
 

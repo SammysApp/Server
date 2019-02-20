@@ -19,7 +19,7 @@ final class PurchasedOrderController {
             .flatMap { user, outstandingOrder in
                 try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
                     try self.createCharge(for: totalPrice, user: user, source: data.source, req: req)
-                        .flatMap { try self.purchasedOrder(user: user, charge: $0, totalPrice: totalPrice, outstandingOrder: outstandingOrder).create(on: req) }
+                        .flatMap { try self.makePurchasedOrder(user: user, charge: $0, totalPrice: totalPrice, outstandingOrder: outstandingOrder).create(on: req) }
                         .and(outstandingOrder.constructedItems.query(on: req).all())
                         .flatMap { self.insert(purchasedOrder: $0, constructedItems: $1, req: req).transform(to: $0) }
                 }
@@ -47,7 +47,7 @@ final class PurchasedOrderController {
         return try self.stripeClient(req).charge.create(amount: amount, currency: .usd, customer: user.customerID, source: source)
     }
 
-    private func purchasedOrder(user: User, charge: StripeCharge, totalPrice: Int, outstandingOrder: OutstandingOrder) throws -> PurchasedOrder {
+    private func makePurchasedOrder(user: User, charge: StripeCharge, totalPrice: Int, outstandingOrder: OutstandingOrder) throws -> PurchasedOrder {
         return PurchasedOrder(
             userID: try user.requireID(),
             chargeID: charge.id,
@@ -57,7 +57,7 @@ final class PurchasedOrderController {
             note: outstandingOrder.note)
     }
 
-    private func constructedItemDocumentData(category: Category, totalPrice: Int, items: [ConstructedItemCategorizedItems]) throws -> ConstructedItemDocumentData {
+    private func makeConstructedItemDocumentData(category: Category, totalPrice: Int, items: [ConstructedItemCategorizedItems]) throws -> ConstructedItemDocumentData {
         return try ConstructedItemDocumentData(id: UUID(), totalPrice: totalPrice, category: CategoryDocumentData(id: category.requireID(), name: category.name), items: items)
     }
 
@@ -69,7 +69,7 @@ final class PurchasedOrderController {
                     .and($0.totalPrice(on: req))
                     .and(categorizedItemsCreator.create(for: $0, on: req))
                     .map { let ((category, totalPrice), items) = $0
-                        return try self.constructedItemDocumentData(category: category, totalPrice: totalPrice, items: items)
+                        return try self.makeConstructedItemDocumentData(category: category, totalPrice: totalPrice, items: items)
                 }}.flatten(on: req).map {
                     try PurchasedOrderDocumentData(purchasedOrderID: purchasedOrder.requireID(), constructedItems: $0)
                 }.map { try BSONEncoder().encode($0) }

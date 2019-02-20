@@ -4,7 +4,7 @@ protocol CategorizableCategory: Equatable {}
 protocol CategorizableItem {}
 
 struct CategoryItemsCategorizer {
-    func categorizedItems<C: CategorizableCategory, I: CategorizableItem>(from pairs: [(C, I)]) -> [CategorizedItems<C, I>] {
+    func makeCategorizedItems<C: CategorizableCategory, I: CategorizableItem>(pairs: [(C, I)]) -> [CategorizedItems<C, I>] {
         var categorizedItems = [CategorizedItems<C, I>]()
         var currentCategory: C?
         var currentItems = [I]()
