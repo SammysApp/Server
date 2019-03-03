@@ -27,15 +27,8 @@ final class ConstructedItemController {
     // MARK: - POST
     private func create(_ req: Request, data: CreateData) throws -> Future<ConstructedItemData> {
         return try verified(data, req: req)
-            .then { ConstructedItem(categoryID: $0.categoryID, userID: $0.userID)
-                .create(on: req) }
-            .and(CategoryItem.query(on: req).filter(\.id ~~ data.categoryItemIDs).all())
-            .and(Modifier.query(on: req).filter(\.id ~~ (data.modifierIDs ?? [])).all())
-            .then { let ((constructedItem, categoryItems), modifiers) = $0
-                return constructedItem.categoryItems.attachAll(categoryItems, on: req)
-                    .and(constructedItem.modifiers.attachAll(modifiers, on: req))
-                    .transform(to: constructedItem)
-            }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
+            .then { ConstructedItem(categoryID: $0.categoryID, userID: $0.userID).create(on: req) }
+            .flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
 
     // MARK: - Helper Methods
@@ -80,8 +73,6 @@ private extension ConstructedItemController {
     struct CreateData: Content {
         let categoryID: Category.ID
         let userID: User.ID?
-        let categoryItemIDs: [CategoryItem.ID]
-        let modifierIDs: [Modifier.ID]?
     }
 }
 
