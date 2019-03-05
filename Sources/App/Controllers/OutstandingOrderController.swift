@@ -25,9 +25,9 @@ final class OutstandingOrderController {
     private func create(_ req: Request, data: CreateData) throws -> Future<OutstandingOrderData> {
         return try verified(data, req: req).then { data in
             OutstandingOrder(userID: data.userID).create(on: req).flatMap { outstandingOrder in
-                if let constructedItems = data.constructedItemIDs {
+                if let constructedItemIDs = data.constructedItemIDs {
                     return ConstructedItem.query(on: req)
-                        .filter(\.id ~~ constructedItems).all()
+                        .filter(\.id ~~ constructedItemIDs).all()
                         .then { outstandingOrder.constructedItems.attachAll($0, on: req) }
                         .transform(to: outstandingOrder)
                 } else { return req.future(outstandingOrder) }

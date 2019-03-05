@@ -5,3 +5,4 @@ xcuserdata
 DerivedData/
 .DS_Store
 AppSecrets.swift
+LocalConstants.swift

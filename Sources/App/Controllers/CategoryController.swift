@@ -14,24 +14,24 @@ final class CategoryController {
         return databaseQuery.all()
             .flatMap { try self.makeCategoryDataArray(categories: $0, req: req) }
     }
-
+    
     private func getOne(_ req: Request) throws -> Future<Category> {
         return try req.parameters.next(Category.self)
     }
-
+    
     private func getSubcategories(_ req: Request) throws -> Future<[CategoryData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.subcategories.query(on: req).all() }
             .flatMap { try self.makeCategoryDataArray(categories: $0, req: req) }
     }
-
+    
     private func getItems(_ req: Request) throws -> Future<[ItemData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.items.query(on: req).alsoDecode(CategoryItem.self).all() }
             .flatMap { try self.makeItemDataArray(itemCategoryItemPairs: $0, req: req) }
             .map { $0.sorted() }
     }
-
+    
     private func getItemModifiers(_ req: Request) throws -> Future<[Modifier]> {
         return try req.parameters.next(Category.self)
             .and(try req.parameters.next(Item.self))
@@ -39,7 +39,7 @@ final class CategoryController {
                 .unwrap(or: Abort(.badRequest))
                 .flatMap { try $0.modifiers.query(on: req).all() } }
     }
-
+    
     // MARK: - Helper Methods
     private func makeCategoryDataArray(categories: [Category], req: Request) throws
         -> Future<[CategoryData]> {
@@ -49,13 +49,13 @@ final class CategoryController {
                 { try CategoryData(category: category, isParentCategory: $0) }
             }.flatten(on: req)
     }
-
+    
     private func makeItemDataArray(itemCategoryItemPairs: [(Item, CategoryItem)], req: Request) throws -> Future<[ItemData]> {
         return try itemCategoryItemPairs
             .map { try self.makeItemData(item: $0, categoryItem: $1, req: req) }
             .flatten(on: req)
     }
-
+    
     private func makeItemData(item: Item, categoryItem: CategoryItem, req: Request) throws -> Future<ItemData> {
         return try categoryItem.modifiers.query(on: req)
             .count().map { $0 > 0 }
@@ -126,7 +126,7 @@ private extension CategoryController {
 
 private extension Array where Element == CategoryController.ItemData {
     var isAllPriced: Bool { return allSatisfy { $0.price != nil } }
-
+    
     func sorted() -> [CategoryController.ItemData] {
         if isAllPriced { return sorted { $0.price! < $1.price! } }
         else { return sorted { $0.name < $1.name } }

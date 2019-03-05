@@ -3,7 +3,7 @@ import JWT
 
 struct UserRequestVerifier {
     private let google = GoogleAPIManager()
-
+    
     /// Verifies a user based on their Firebase JWT token. Returns their Firebase UID.
     func verify(_ req: Request) throws -> Future<User.UID> {
         guard let bearer = req.http.headers.bearerAuthorization

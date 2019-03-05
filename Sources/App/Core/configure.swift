@@ -8,7 +8,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     let router = EngineRouter.default()
     try routes(router)
     services.register(router, as: Router.self)
-
+    
     // Register middleware.
     var middlewares = MiddlewareConfig()
     middlewares.use(ErrorMiddleware.self)
@@ -22,10 +22,10 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     
     // Configure PostgreSQL database.
     let postgresConfig = PostgreSQLDatabaseConfig(
-        hostname: AppConstants.PostgreSQL.Local.hostname,
-        port: AppConstants.PostgreSQL.Local.port,
-        username: AppConstants.PostgreSQL.Local.username,
-        database: AppConstants.PostgreSQL.Local.database
+        hostname: LocalConstants.PostgreSQL.hostname,
+        port: LocalConstants.PostgreSQL.port,
+        username: LocalConstants.PostgreSQL.username,
+        database: LocalConstants.PostgreSQL.database
     )
     let postgres = PostgreSQLDatabase(config: postgresConfig)
     

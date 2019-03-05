@@ -5,11 +5,11 @@ import Stripe
 
 final class PurchasedOrderController {
     private let verifier = UserRequestVerifier()
-
+    
     private enum CollectionNames: String, CollectionName {
         case purchasedOrders
     }
-
+    
     // MARK: - POST
     private func create(_ req: Request, data: CreateData) throws -> Future<PurchasedOrder> {
         return try verifiedUser(data.userID, req: req)
@@ -25,28 +25,28 @@ final class PurchasedOrderController {
                 }
             }
     }
-
+    
     // MARK: - Helper Methods
     private func database(_ req: Request) -> Future<MongoKitten.Database> {
         return MongoKitten.Database
-            .connect(AppConstants.MongoDB.Local.uri, on: req.eventLoop)
+            .connect(LocalConstants.MongoDB.uri, on: req.eventLoop)
     }
-
+    
     private func stripeClient(_ req: Request) throws -> StripeClient {
         return try req.make(StripeClient.self)
     }
-
+    
     private func verifiedUser(_ userID: User.ID, req: Request) throws -> Future<User> {
         return User.find(userID, on: req).unwrap(or: Abort(.badRequest))
             .and(try verifier.verify(req))
             .guard({ $0.uid == $1 }, else: Abort(.unauthorized))
             .map { user, _ in user }
     }
-
+    
     private func createCharge(for amount: Int, user: User, source: String?, req: Request) throws -> Future<StripeCharge> {
         return try self.stripeClient(req).charge.create(amount: amount, currency: .usd, customer: user.customerID, source: source)
     }
-
+    
     private func makePurchasedOrder(user: User, charge: StripeCharge, totalPrice: Int, outstandingOrder: OutstandingOrder) throws -> PurchasedOrder {
         return PurchasedOrder(
             userID: try user.requireID(),
@@ -56,11 +56,11 @@ final class PurchasedOrderController {
             preparedForDate: outstandingOrder.preparedForDate,
             note: outstandingOrder.note)
     }
-
+    
     private func makeConstructedItemDocumentData(category: Category, totalPrice: Int, items: [ConstructedItemCategorizedItems]) throws -> ConstructedItemDocumentData {
         return try ConstructedItemDocumentData(id: UUID(), totalPrice: totalPrice, category: CategoryDocumentData(id: category.requireID(), name: category.name), items: items)
     }
-
+    
     private func insert(purchasedOrder: PurchasedOrder, constructedItems: [ConstructedItem], req: Request) -> Future<Void> {
         let categorizedItemsCreator = ConstructedItemCategorizedItemsCreator()
         return database(req).flatMap { database in
@@ -101,14 +101,14 @@ private extension PurchasedOrderController {
         let purchasedOrderID: PurchasedOrder.ID
         let constructedItems: [ConstructedItemDocumentData]
     }
-
+    
     struct ConstructedItemDocumentData: Codable {
         let id: UUID
         let totalPrice: Int
         let category: CategoryDocumentData
         let items: [ConstructedItemCategorizedItems]
     }
-
+    
     struct CategoryDocumentData: Codable {
         let id: Category.ID
         let name: String
