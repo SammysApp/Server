@@ -23,16 +23,9 @@ final class OutstandingOrderController {
     
     // MARK: - POST
     private func create(_ req: Request, data: CreateData) throws -> Future<OutstandingOrderData> {
-        return try verified(data, req: req).then { data in
-            OutstandingOrder(userID: data.userID).create(on: req).flatMap { outstandingOrder in
-                if let constructedItemIDs = data.constructedItemIDs {
-                    return ConstructedItem.query(on: req)
-                        .filter(\.id ~~ constructedItemIDs).all()
-                        .then { outstandingOrder.constructedItems.attachAll($0, on: req) }
-                        .transform(to: outstandingOrder)
-                } else { return req.future(outstandingOrder) }
-            }
-            }.map { try OutstandingOrderData($0) }
+        return try verified(data, req: req)
+            .then { OutstandingOrder(userID: $0.userID).create(on: req) }
+            .map { try OutstandingOrderData($0) }
     }
     
     private func attachConstructedItems(_ req: Request, data: AttachConstructedItemsData) throws -> Future<OutstandingOrderData> {
@@ -69,8 +62,7 @@ final class OutstandingOrderController {
     
     // MARK: - Helper Methods
     private func verified(_ outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrder> {
-        guard let userID = outstandingOrder.userID
-            else { return req.future(outstandingOrder) }
+        guard let userID = outstandingOrder.userID else { return req.future(outstandingOrder) }
         return try verify(userID, req: req).transform(to: outstandingOrder)
     }
     
@@ -112,7 +104,6 @@ extension OutstandingOrderController: RouteCollection {
 private extension OutstandingOrderController {
     struct CreateData: Content {
         let userID: User.ID?
-        let constructedItemIDs: [ConstructedItem.ID]?
     }
     
     struct AttachConstructedItemsData: Content {
@@ -148,3 +139,4 @@ private extension OutstandingOrderController {
         }
     }
 }
+
