@@ -31,7 +31,7 @@ final class ConstructedItemController {
             .flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
     
-    private func addItems(_ req: Request, data: AddItemsData) throws -> Future<ConstructedItemData> {
+    private func attachItems(_ req: Request, data: AttachItemsData) throws -> Future<ConstructedItemData> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
                 CategoryItem.query(on: req).filter(\.id ~~ data.categoryItemIDs).all()
@@ -76,7 +76,7 @@ extension ConstructedItemController: RouteCollection {
         // POST /constructedItems
         constructedItemsRouter.post(CreateData.self, use: create)
         // POST /constructedItems/:constructedItem/items
-        constructedItemsRouter.post(AddItemsData.self, at: ConstructedItem.parameter, "items", use: addItems)
+        constructedItemsRouter.post(AttachItemsData.self, at: ConstructedItem.parameter, "items", use: attachItems)
     }
 }
 
@@ -86,7 +86,7 @@ private extension ConstructedItemController {
         let userID: User.ID?
     }
     
-    struct AddItemsData: Content {
+    struct AttachItemsData: Content {
         let categoryItemIDs: [CategoryItem.ID]
     }
 }
