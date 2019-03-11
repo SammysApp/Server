@@ -22,6 +22,7 @@ final class CategoryItem: PostgreSQLUUIDPivot, ModifiablePivot {
 }
 
 extension CategoryItem: Purchasable {}
+extension CategoryItem: Parameter {}
 extension CategoryItem: Migration {}
 
 extension CategoryItem {

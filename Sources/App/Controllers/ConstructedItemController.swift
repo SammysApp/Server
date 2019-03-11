@@ -31,11 +31,21 @@ final class ConstructedItemController {
             .flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
     
-    private func attachItems(_ req: Request, data: AttachItemsData) throws -> Future<ConstructedItemData> {
+    private func attachCategoryItems(_ req: Request, data: AttachCategoryItemsData) throws -> Future<ConstructedItemData> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
                 CategoryItem.query(on: req).filter(\.id ~~ data.categoryItemIDs).all()
                     .then { constructedItem.categoryItems.attachAll($0, on: req) }
+                    .transform(to: constructedItem)
+            }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
+    }
+    
+    // MARK: - DELETE
+    private func detachCategoryItem(_ req: Request) throws -> Future<ConstructedItemData> {
+        return try req.parameters.next(ConstructedItem.self)
+            .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
+                try req.parameters.next(CategoryItem.self)
+                    .then { constructedItem.categoryItems.detach($0, on: req) }
                     .transform(to: constructedItem)
             }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
@@ -76,7 +86,10 @@ extension ConstructedItemController: RouteCollection {
         // POST /constructedItems
         constructedItemsRouter.post(CreateData.self, use: create)
         // POST /constructedItems/:constructedItem/items
-        constructedItemsRouter.post(AttachItemsData.self, at: ConstructedItem.parameter, "items", use: attachItems)
+        constructedItemsRouter.post(AttachCategoryItemsData.self, at: ConstructedItem.parameter, "items", use: attachCategoryItems)
+    
+        // DELETE /constructedItems/:constructedItem/items/:categoryItem
+        constructedItemsRouter.delete(ConstructedItem.parameter, "items", CategoryItem.parameter, use: detachCategoryItem)
     }
 }
 
@@ -86,7 +99,7 @@ private extension ConstructedItemController {
         let userID: User.ID?
     }
     
-    struct AttachItemsData: Content {
+    struct AttachCategoryItemsData: Content {
         let categoryItemIDs: [CategoryItem.ID]
     }
 }

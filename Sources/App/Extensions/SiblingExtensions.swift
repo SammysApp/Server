@@ -9,4 +9,11 @@ where Through: ModifiablePivot, Through.Left == Base, Through.Right == Related, 
             eventLoop: conn.eventLoop
         )
     }
+    
+    func detachAll(_ models: [Related], on conn: DatabaseConnectable) -> Future<Void> {
+        return Future<Void>.andAll(
+            models.map { detach($0, on: conn).transform(to: ()) },
+            eventLoop: conn.eventLoop
+        )
+    }
 }
