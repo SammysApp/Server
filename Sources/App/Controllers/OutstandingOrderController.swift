@@ -12,13 +12,13 @@ final class OutstandingOrderController {
             .map { try OutstandingOrderData($0) }
     }
     
-    private func getConstructedItems(_ req: Request)
-        throws -> Future<[ConstructedItemData]> {
-            return try req.parameters.next(OutstandingOrder.self)
-                .flatMap { try self.verified($0, req: req) }
-                .flatMap { try $0.constructedItems.query(on: req)
-                    .alsoDecode(OutstandingOrderConstructedItem.self).all() }
-                .map { try $0.map(ConstructedItemData.init) }
+    private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemData]> {
+        return try req.parameters.next(OutstandingOrder.self)
+            .flatMap { try self.verified($0, req: req) }
+            .flatMap { try $0.constructedItems.query(on: req)
+                .alsoDecode(OutstandingOrderConstructedItem.self).all() }.flatMap { pairs in
+                try pairs.map { try self.makeConstructedItemData(constructedItem: $0, outstandingOrderConstructedItem: $1, req: req) }.flatten(on: req)
+            }
     }
     
     // MARK: - POST
@@ -56,11 +56,16 @@ final class OutstandingOrderController {
             .flatMap { pivot, constructedItem in
                 guard let pivot = pivot else { throw Abort(.badRequest) }
                 if let quantity = data.quantity { pivot.quantity = quantity }
-                return try pivot.update(on: req).transform(to: ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: pivot))
+                return try pivot.update(on: req).transform(to: self.makeConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: pivot, req: req))
         }
     }
     
     // MARK: - Helper Methods
+    private func makeConstructedItemData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
+        return try constructedItem.totalPrice(on: req)
+            .map { try ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, totalPrice: $0) }
+    }
+    
     private func verified(_ outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrder> {
         guard let userID = outstandingOrder.userID else { return req.future(outstandingOrder) }
         return try verify(userID, req: req).transform(to: outstandingOrder)
@@ -127,15 +132,20 @@ private extension OutstandingOrderController {
     struct ConstructedItemData: Content {
         let id: ConstructedItem.ID
         let categoryID: Category.ID
+        let userID: User.ID?
         let isFavorite: Bool
         let quantity: Int
+        let totalPrice: Int
         
         init(constructedItem: ConstructedItem,
-             outstandingOrderConstructedItem: OutstandingOrderConstructedItem) throws {
+             outstandingOrderConstructedItem: OutstandingOrderConstructedItem,
+             totalPrice: Int) throws {
             self.id = try constructedItem.requireID()
             self.categoryID = constructedItem.categoryID
+            self.userID = constructedItem.userID
             self.isFavorite = constructedItem.isFavorite
             self.quantity = outstandingOrderConstructedItem.quantity
+            self.totalPrice = totalPrice
         }
     }
 }
