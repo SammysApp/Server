@@ -62,8 +62,9 @@ final class OutstandingOrderController {
     
     // MARK: - Helper Methods
     private func makeConstructedItemData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
-        return try constructedItem.totalPrice(on: req)
-            .map { try ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, totalPrice: $0) }
+        return try constructedItem.category.get(on: req)
+            .and(constructedItem.totalPrice(on: req))
+            .map { try ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, category: $0, totalPrice: $1) }
     }
     
     private func verified(_ outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrder> {
@@ -135,16 +136,19 @@ private extension OutstandingOrderController {
         let userID: User.ID?
         let isFavorite: Bool
         let quantity: Int
+        let name: String
         let totalPrice: Int
         
         init(constructedItem: ConstructedItem,
              outstandingOrderConstructedItem: OutstandingOrderConstructedItem,
+             category: Category,
              totalPrice: Int) throws {
             self.id = try constructedItem.requireID()
             self.categoryID = constructedItem.categoryID
             self.userID = constructedItem.userID
             self.isFavorite = constructedItem.isFavorite
             self.quantity = outstandingOrderConstructedItem.quantity
+            self.name = category.name
             self.totalPrice = totalPrice
         }
     }
