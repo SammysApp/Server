@@ -64,7 +64,7 @@ final class OutstandingOrderController {
     private func makeConstructedItemData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
         return try constructedItem.category.get(on: req)
             .and(constructedItem.totalPrice(on: req))
-            .map { try ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, category: $0, totalPrice: $1) }
+            .map { try ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, category: $0, totalPrice: $1 * outstandingOrderConstructedItem.quantity) }
     }
     
     private func verified(_ outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrder> {
