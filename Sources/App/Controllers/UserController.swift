@@ -19,8 +19,8 @@ final class UserController {
     }
     
     private func getOutstandingOrders(_ req: Request) throws -> Future<[OutstandingOrder]> {
-        return try verifier.verify(req)
-            .flatMap { uid in try req.parameters.next(User.self)
+        return try verifier.verify(req).flatMap { uid in
+                try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
             .flatMap { try self.makeOutstandingOrders(user: $0, req: req) }
     }

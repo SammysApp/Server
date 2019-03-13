@@ -15,8 +15,7 @@ final class PurchasedOrderController {
         return try verifiedUser(data.userID, req: req)
             .and(OutstandingOrder.find(data.outstandingOrderID, on: req)
                 .unwrap(or: Abort(.badRequest)))
-            .guard({ $0.id == $1.userID }, else: Abort(.unauthorized))
-            .flatMap { user, outstandingOrder in
+            .guard({ $0.id == $1.userID }, else: Abort(.unauthorized)).flatMap { user, outstandingOrder in
                 try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
                     try self.createCharge(for: totalPrice, user: user, source: data.source, req: req)
                         .flatMap { try self.makePurchasedOrder(user: user, charge: $0, totalPrice: totalPrice, outstandingOrder: outstandingOrder).create(on: req) }

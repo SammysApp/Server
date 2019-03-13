@@ -16,8 +16,7 @@ final class ConstructedItemController {
     private func getCategorizedItems(_ req: Request) throws -> Future<Response> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }
-            .flatMap { try self.categorizedItemsCreator.create(for: $0, on: req) }
-            .map { categorizedItems in
+            .flatMap { try self.categorizedItemsCreator.create(for: $0, on: req) }.map { categorizedItems in
                 let res = req.response()
                 try res.content.encode(json: categorizedItems)
                 return res

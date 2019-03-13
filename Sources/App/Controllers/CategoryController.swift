@@ -34,10 +34,11 @@ final class CategoryController {
     
     private func getItemModifiers(_ req: Request) throws -> Future<[Modifier]> {
         return try req.parameters.next(Category.self)
-            .and(try req.parameters.next(Item.self))
-            .flatMap { try $0.pivot(attaching: $1, on: req)
+            .and(try req.parameters.next(Item.self)).flatMap {
+                try $0.pivot(attaching: $1, on: req)
                 .unwrap(or: Abort(.badRequest))
-                .flatMap { try $0.modifiers.query(on: req).all() } }
+                .flatMap { try $0.modifiers.query(on: req).all() }
+            }
     }
     
     // MARK: - Helper Methods
