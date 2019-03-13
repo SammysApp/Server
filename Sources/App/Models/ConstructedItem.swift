@@ -37,6 +37,18 @@ extension ConstructedItem {
 }
 
 extension ConstructedItem {
+    func name(on conn: DatabaseConnectable) throws -> Future<String> {
+        return category.get(on: conn).map { return $0.name }
+    }
+    
+    func description(on conn: DatabaseConnectable) throws -> Future<String> {
+        return try categoryItems.query(on: conn).join(\Item.id, to: \CategoryItem.itemID).decode(Item.self).all()
+            .map { items in items.map { $0.name } }
+            .map { $0.joined(separator: ", ") }
+    }
+}
+
+extension ConstructedItem {
     func totalPrice(on conn: DatabaseConnectable) throws -> Future<Int> {
         return try categoryItems.query(on: conn).all().map { $0 as [Purchasable] }
             .and(modifiers.query(on: conn).all().map { $0 as [Purchasable] })

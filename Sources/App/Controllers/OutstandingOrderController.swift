@@ -74,9 +74,19 @@ final class OutstandingOrderController {
     }
     
     private func makeConstructedItemData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
-        return try constructedItem.category.get(on: req)
+        return try constructedItem.name(on: req)
+            .and(constructedItem.description(on: req))
             .and(constructedItem.totalPrice(on: req))
-            .map { try ConstructedItemData(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, category: $0, totalPrice: $1 * outstandingOrderConstructedItem.quantity) }
+            .map { tuple in
+                let ((name, description), totalPrice) = tuple
+                return try ConstructedItemData(
+                    constructedItem: constructedItem,
+                    outstandingOrderConstructedItem: outstandingOrderConstructedItem,
+                    name: name,
+                    description: description,
+                    totalPrice: totalPrice * outstandingOrderConstructedItem.quantity
+                )
+            }
     }
     
     private func verified(_ outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrder> {
@@ -156,21 +166,24 @@ private extension OutstandingOrderController {
         let categoryID: Category.ID
         let userID: User.ID?
         let isFavorite: Bool
-        let quantity: Int
         let name: String
+        let description: String
         let totalPrice: Int
+        let quantity: Int
         
         init(constructedItem: ConstructedItem,
              outstandingOrderConstructedItem: OutstandingOrderConstructedItem,
-             category: Category,
+             name: String,
+             description: String,
              totalPrice: Int) throws {
             self.id = try constructedItem.requireID()
             self.categoryID = constructedItem.categoryID
             self.userID = constructedItem.userID
             self.isFavorite = constructedItem.isFavorite
-            self.quantity = outstandingOrderConstructedItem.quantity
-            self.name = category.name
+            self.name = name
+            self.description = description
             self.totalPrice = totalPrice
+            self.quantity = outstandingOrderConstructedItem.quantity
         }
     }
 }

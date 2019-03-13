@@ -10,14 +10,15 @@ struct ConstructedItemCategorizedItemsCreator {
     func create(for constructedItem: ConstructedItem, on conn: DatabaseConnectable) throws -> Future<[ConstructedItemCategorizedItems]> {
         return try constructedItem.categoryItems.query(on: conn)
             .join(\Category.id, to: \CategoryItem.categoryID).alsoDecode(Category.self)
-            .join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self).all()
-            .flatMap { try $0.map { tuple -> Future<(ConstructedItemCategorizedCategoryData, ConstructedItemCategorizedItemData)> in
-                let ((categoryItem, category), item) = tuple
-                return try constructedItem.modifiers.query(on: conn)
-                    .filter(\.parentCategoryItemID == categoryItem.id).all()
-                    .map { try $0.map { try ConstructedItemCategorizedModifierData($0) } }
-                    .map { try (ConstructedItemCategorizedCategoryData(category), ConstructedItemCategorizedItemData(item: item, categoryItem: categoryItem, modifiers: ($0.isEmpty ? nil : $0))) }
-                }.flatten(on: conn) }.map { self.categorizer.makeCategorizedItems(pairs: $0) }
+            .join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self).all().flatMap {
+                try $0.map { tuple -> Future<(ConstructedItemCategorizedCategoryData, ConstructedItemCategorizedItemData)> in
+                    let ((categoryItem, category), item) = tuple
+                    return try constructedItem.modifiers.query(on: conn)
+                        .filter(\.parentCategoryItemID == categoryItem.id).all()
+                        .map { try $0.map { try ConstructedItemCategorizedModifierData($0) } }
+                        .map { try (ConstructedItemCategorizedCategoryData(category), ConstructedItemCategorizedItemData(item: item, categoryItem: categoryItem, modifiers: ($0.isEmpty ? nil : $0))) }
+                }.flatten(on: conn)
+            }.map { self.categorizer.makeCategorizedItems(pairs: $0) }
     }
 }
 
