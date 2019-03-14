@@ -1,5 +1,4 @@
 import Vapor
-import MongoKitten
 
 /// Registers application routes.
 public func routes(_ router: Router) throws {
