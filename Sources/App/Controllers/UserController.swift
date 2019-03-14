@@ -29,7 +29,7 @@ final class UserController {
     private func create(_ req: Request, data: CreateData) throws -> Future<User> {
         return try verifier.verify(req)
             .and(self.stripeClient(req).customer.create(email: data.email))
-            .flatMap { User(uid: $0, customerID: $1.id, email: data.email, name: data.name).create(on: req) }
+            .flatMap { User(uid: $0, customerID: $1.id, email: data.email, firstName: data.firstName, lastName: data.lastName).create(on: req) }
     }
     
     // MARK: - Helper Methods
@@ -76,7 +76,8 @@ extension UserController: RouteCollection {
 private extension UserController {
     struct CreateData: Content {
         let email: String
-        let name: String
+        let firstName: String
+        let lastName: String
     }
 }
 

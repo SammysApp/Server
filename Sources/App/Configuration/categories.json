@@ -2,6 +2,7 @@
   {
     "id": "1e35acdf-f18d-4121-adfd-0a269c0b3a7e",
     "name": "Salad",
+    "imageURL": "https://s3.amazonaws.com/sammysapp/images/salad.jpg",
     "subcategories": [
       {
         "id": "d61e1f68-4250-499b-bdbc-ed351300ac33",

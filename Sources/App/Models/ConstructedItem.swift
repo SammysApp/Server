@@ -5,15 +5,18 @@ final class ConstructedItem: PostgreSQLUUIDModel {
     var id: ConstructedItem.ID?
     var categoryID: Category.ID
     var userID: User.ID?
+    var name: String?
     var isFavorite: Bool
     
     init(id: ConstructedItem.ID? = nil,
          categoryID: Category.ID,
          userID: User.ID? = nil,
+         name: String? = nil,
          isFavorite: Bool = false) {
         self.id = id
         self.categoryID = categoryID
         self.userID = userID
+        self.name = name
         self.isFavorite = isFavorite
     }
 }
@@ -38,6 +41,7 @@ extension ConstructedItem {
 
 extension ConstructedItem {
     func name(on conn: DatabaseConnectable) throws -> Future<String> {
+        if let name = name { return conn.future(name) }
         return category.get(on: conn).map { return $0.name }
     }
     

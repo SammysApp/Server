@@ -43,7 +43,13 @@ struct AddDefaultData {
     }()
     
     private static func makeCategory(categoryData: CategoryData, parentCategoryID: Category.ID?) -> Category {
-        return Category(id: categoryData.id, name: categoryData.name, parentCategoryID: parentCategoryID, isConstructable: categoryData.isConstructable ?? false)
+        return Category(
+            id: categoryData.id,
+            name: categoryData.name,
+            parentCategoryID: parentCategoryID,
+            isConstructable: categoryData.isConstructable ?? false,
+            imageURL: categoryData.imageURL
+        )
     }
     
     private static func create(_ categoriesData: [CategoryData]?, parentCategoryID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
@@ -123,6 +129,7 @@ private extension AddDefaultData {
         let id: Category.ID
         let name: String
         let isConstructable: Bool?
+        let imageURL: String?
         let items: [Item.ID]?
         let subcategories: [CategoryData]?
     }
