@@ -92,6 +92,7 @@ private extension CategoryController {
         var id: Category.ID
         var name: String
         var parentCategoryID: Category.ID?
+        var imageURL: String?
         var isParentCategory: Bool
         var isConstructable: Bool
         
@@ -99,6 +100,7 @@ private extension CategoryController {
             self.id = try category.requireID()
             self.name = category.name
             self.parentCategoryID = category.parentCategoryID
+            self.imageURL = category.imageURL
             self.isParentCategory = isParentCategory
             self.isConstructable = category.isConstructable
         }

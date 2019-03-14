@@ -47,8 +47,8 @@ struct AddDefaultData {
             id: categoryData.id,
             name: categoryData.name,
             parentCategoryID: parentCategoryID,
-            isConstructable: categoryData.isConstructable ?? false,
-            imageURL: categoryData.imageURL
+            imageURL: categoryData.imageURL,
+            isConstructable: categoryData.isConstructable ?? false
         )
     }
     
