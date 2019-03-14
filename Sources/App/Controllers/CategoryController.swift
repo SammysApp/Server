@@ -90,16 +90,16 @@ private extension CategoryController {
 private extension CategoryController {
     struct CategoryData: Content {
         var id: Category.ID
-        var name: String
         var parentCategoryID: Category.ID?
+        var name: String
         var imageURL: String?
         var isParentCategory: Bool
         var isConstructable: Bool
         
         init(category: Category, isParentCategory: Bool) throws {
             self.id = try category.requireID()
-            self.name = category.name
             self.parentCategoryID = category.parentCategoryID
+            self.name = category.name
             self.imageURL = category.imageURL
             self.isParentCategory = isParentCategory
             self.isConstructable = category.isConstructable

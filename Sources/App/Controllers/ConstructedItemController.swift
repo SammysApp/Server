@@ -108,15 +108,15 @@ private extension ConstructedItemController {
         var id: ConstructedItem.ID
         var categoryID: Category.ID
         var userID: User.ID?
-        var isFavorite: Bool
         var totalPrice: Int
+        var isFavorite: Bool
         
         init(constructedItem: ConstructedItem, totalPrice: Int) throws {
             self.id = try constructedItem.requireID()
             self.categoryID = constructedItem.categoryID
             self.userID = constructedItem.userID
-            self.isFavorite = constructedItem.isFavorite
             self.totalPrice = totalPrice
+            self.isFavorite = constructedItem.isFavorite
         }
     }
 }

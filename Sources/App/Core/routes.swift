@@ -14,7 +14,4 @@ public func routes(_ router: Router) throws {
     
     let outstandingOrderController = OutstandingOrderController()
     try router.register(collection: outstandingOrderController)
-    
-    let purchasedOrderController = PurchasedOrderController()
-    try router.register(collection: purchasedOrderController)
 }

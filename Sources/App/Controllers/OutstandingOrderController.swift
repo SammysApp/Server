@@ -165,11 +165,11 @@ private extension OutstandingOrderController {
         let id: ConstructedItem.ID
         let categoryID: Category.ID
         let userID: User.ID?
-        let isFavorite: Bool
         let name: String
         let description: String
-        let totalPrice: Int
         let quantity: Int
+        let totalPrice: Int
+        let isFavorite: Bool
         
         init(constructedItem: ConstructedItem,
              outstandingOrderConstructedItem: OutstandingOrderConstructedItem,
@@ -179,11 +179,11 @@ private extension OutstandingOrderController {
             self.id = try constructedItem.requireID()
             self.categoryID = constructedItem.categoryID
             self.userID = constructedItem.userID
-            self.isFavorite = constructedItem.isFavorite
             self.name = name
             self.description = description
-            self.totalPrice = totalPrice
             self.quantity = outstandingOrderConstructedItem.quantity
+            self.totalPrice = totalPrice
+            self.isFavorite = constructedItem.isFavorite
         }
     }
 }
