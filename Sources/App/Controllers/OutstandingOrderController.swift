@@ -133,20 +133,6 @@ extension OutstandingOrderController: RouteCollection {
 }
 
 private extension OutstandingOrderController {
-    struct CreateData: Content {
-        let userID: User.ID?
-    }
-    
-    struct AttachConstructedItemsData: Content {
-        let ids: [ConstructedItem.ID]
-    }
-    
-    struct PartialConstructedItemUpdateData: Content {
-        let quantity: Int?
-    }
-}
-
-private extension OutstandingOrderController {
     struct OutstandingOrderData: Content {
         let id: OutstandingOrder.ID
         let preparedForDate: Date?
@@ -188,3 +174,16 @@ private extension OutstandingOrderController {
     }
 }
 
+private extension OutstandingOrderController {
+    struct CreateData: Content {
+        let userID: User.ID?
+    }
+    
+    struct AttachConstructedItemsData: Content {
+        let ids: [ConstructedItem.ID]
+    }
+    
+    struct PartialConstructedItemUpdateData: Content {
+        let quantity: Int?
+    }
+}

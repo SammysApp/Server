@@ -39,6 +39,30 @@ final class ConstructedItemController {
             }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
     }
     
+    // MARK: - PUT
+    private func update(_ req: Request, constructedItem: ConstructedItem) throws -> Future<ConstructedItemData> {
+        return try req.parameters.next(ConstructedItem.self).flatMap { existing in
+            constructedItem.id = try existing.requireID()
+            if let userID = constructedItem.userID {
+                return try self.verify(userID, req: req)
+                    .then { constructedItem.update(on: req) }
+            } else { return constructedItem.update(on: req) }
+        }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
+    }
+    
+    // MARK: - PATCH
+    private func partiallyUpdateConstructedItem(_ req: Request, data: PartialConstructedItemUpdateData) throws -> Future<ConstructedItemData> {
+        return try req.parameters.next(ConstructedItem.self).flatMap { constructedItem in
+            if let isFavorite = data.isFavorite {
+                constructedItem.isFavorite = isFavorite
+            }
+            if let userID = constructedItem.userID {
+                return try self.verify(userID, req: req)
+                    .then { constructedItem.update(on: req) }
+            } else { return constructedItem.update(on: req) }
+        }.flatMap { try self.makeConstructedItemData(constructedItem: $0, req: req) }
+    }
+    
     // MARK: - DELETE
     private func detachCategoryItem(_ req: Request) throws -> Future<ConstructedItemData> {
         return try req.parameters.next(ConstructedItem.self)
@@ -86,20 +110,15 @@ extension ConstructedItemController: RouteCollection {
         constructedItemsRouter.post(CreateData.self, use: create)
         // POST /constructedItems/:constructedItem/items
         constructedItemsRouter.post(AttachCategoryItemsData.self, at: ConstructedItem.parameter, "items", use: attachCategoryItems)
-    
+        
+        // PUT /constructedItems/:constructedItem
+        constructedItemsRouter.put(ConstructedItem.self, at: ConstructedItem.parameter, use: update)
+        
+        // PATCH /constructedItems/:constructedItem
+        constructedItemsRouter.patch(PartialConstructedItemUpdateData.self, at: ConstructedItem.parameter, use: partiallyUpdateConstructedItem)
+        
         // DELETE /constructedItems/:constructedItem/items/:categoryItem
         constructedItemsRouter.delete(ConstructedItem.parameter, "items", CategoryItem.parameter, use: detachCategoryItem)
-    }
-}
-
-private extension ConstructedItemController {
-    struct CreateData: Content {
-        let categoryID: Category.ID
-        let userID: User.ID?
-    }
-    
-    struct AttachCategoryItemsData: Content {
-        let categoryItemIDs: [CategoryItem.ID]
     }
 }
 
@@ -118,5 +137,20 @@ private extension ConstructedItemController {
             self.totalPrice = totalPrice
             self.isFavorite = constructedItem.isFavorite
         }
+    }
+}
+
+private extension ConstructedItemController {
+    struct CreateData: Content {
+        let categoryID: Category.ID
+        let userID: User.ID?
+    }
+    
+    struct AttachCategoryItemsData: Content {
+        let categoryItemIDs: [CategoryItem.ID]
+    }
+    
+    struct PartialConstructedItemUpdateData: Content {
+        let isFavorite: Bool?
     }
 }
