@@ -7,14 +7,24 @@ final class UserController {
     
     // MARK: - GET
     private func getOne(_ req: Request) throws -> Future<User> {
-        return try req.parameters.next(User.self)
+        return try verifier.verify(req).flatMap { uid in
+            try req.parameters.next(User.self)
+                .guard({ $0.uid == uid }, else: Abort(.unauthorized))
+        }
+    }
+    
+    private func getTokenUser(_ req: Request) throws -> Future<User> {
+        return try verifier.verify(req).flatMap { uid in
+            User.query(on: req).filter(\.uid == uid).first()
+                .unwrap(or: Abort(.badRequest))
+        }
     }
     
     private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemData]> {
-        return try verifier.verify(req)
-            .flatMap { uid in try req.parameters.next(User.self)
-                .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
-            .flatMap { try self.queryConstructedItems(user: $0, req: req) }
+        return try verifier.verify(req).flatMap { uid in
+                try req.parameters.next(User.self)
+                    .guard({ $0.uid == uid }, else: Abort(.unauthorized))
+            }.flatMap { try self.queryConstructedItems(user: $0, req: req) }
             .flatMap { try $0.map { try self.makeConstructedItemData(constructedItem: $0, req: req) }.flatten(on: req) }
     }
     
@@ -63,6 +73,8 @@ extension UserController: RouteCollection {
         
         // GET /users/:user
         usersRouter.get(User.parameter, use: getOne)
+        // GET /users/tokenUser
+        usersRouter.get("tokenUser", use: getTokenUser)
         // GET /users/:user/constructedItems
         usersRouter.get(User.parameter, "constructedItems", use: getConstructedItems)
         // GET /users/:user/outstandingOrders
@@ -70,14 +82,6 @@ extension UserController: RouteCollection {
         
         // POST /users
         usersRouter.post(CreateData.self, use: create)
-    }
-}
-
-private extension UserController {
-    struct CreateData: Content {
-        let email: String
-        let firstName: String
-        let lastName: String
     }
 }
 
@@ -102,5 +106,13 @@ private extension UserController {
             self.isFavorite = constructedItem.isFavorite
             self.totalPrice = totalPrice
         }
+    }
+}
+
+private extension UserController {
+    struct CreateData: Content {
+        let email: String
+        let firstName: String
+        let lastName: String
     }
 }
