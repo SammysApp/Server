@@ -53,9 +53,12 @@ final class ConstructedItemController {
     // MARK: - PATCH
     private func partiallyUpdateConstructedItem(_ req: Request, data: PartialConstructedItemUpdateData) throws -> Future<ConstructedItemData> {
         return try req.parameters.next(ConstructedItem.self).flatMap { constructedItem in
-            if let isFavorite = data.isFavorite {
-                constructedItem.isFavorite = isFavorite
+            if let userID = data.userID {
+                guard constructedItem.userID == nil || constructedItem.userID == userID
+                    else { throw Abort(.unauthorized) }
+                constructedItem.userID = userID
             }
+            if let isFavorite = data.isFavorite { constructedItem.isFavorite = isFavorite }
             if let userID = constructedItem.userID {
                 return try self.verify(userID, req: req)
                     .then { constructedItem.update(on: req) }
@@ -151,6 +154,7 @@ private extension ConstructedItemController {
     }
     
     struct PartialConstructedItemUpdateData: Content {
+        let userID: User.ID?
         let isFavorite: Bool?
     }
 }
