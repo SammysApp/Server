@@ -15,6 +15,14 @@ struct SquareAPIManager {
             .map { $0.customer }
     }
     
+    func createCustomerCard(customerID: SquareCustomer.ID, data: CreateCustomerCardRequestData, client: Client) -> Future<SquareCard> {
+        let endpoint = Endpoints.createCustomerCard(customerID)
+        return client.send(endpoint, headers: makeHeaders(endpoint)) {
+            try $0.content.encode(data, using: self.snakeCaseJSONEncoder)
+        }.flatMap { try $0.content.decode(CreateCustomerCardResponseData.self) }
+            .map { $0.card }
+    }
+    
     func charge(locationID: String, data: ChargeRequestData, client: Client) -> Future<SquareTransaction> {
         let endpoint = Endpoints.charge(locationID)
         return client.send(endpoint, headers: makeHeaders(endpoint)) {
@@ -44,6 +52,8 @@ private extension SquareAPIManager {
     enum Endpoints: HTTPEndpoint {
         /// POST `/customers`
         case createCustomer
+        /// POST `/customers/:customer/cards`
+        case createCustomerCard(SquareCustomer.ID)
         /// POST `/locations/:location/transactions`
         case charge(String)
         
@@ -54,6 +64,8 @@ private extension SquareAPIManager {
             switch self {
             case .createCustomer:
                 return (.POST, "/\(version)/customers")
+            case .createCustomerCard(let customerID):
+                return (.POST, "/\(version)/customers/\(customerID)/cards")
             case .charge(let locationID):
                 return (.POST, "/\(version)/locations/\(locationID)/transactions")
             }
@@ -84,5 +96,15 @@ extension SquareAPIManager {
     
     private struct ChargeResponseData: Codable {
         let transaction: SquareTransaction
+    }
+}
+
+extension SquareAPIManager {
+    struct CreateCustomerCardRequestData: Content {
+        let cardNonce: String
+    }
+    
+    private struct CreateCustomerCardResponseData: Codable {
+        let card: SquareCard
     }
 }
