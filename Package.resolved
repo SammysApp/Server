@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
           "branch": null,
-          "revision": "7fe113f5e857c690b25960ccd6d9430cd34d038d",
-          "version": "3.7.1"
+          "revision": "727ae2905ebdca162c5da5bfe187c406555859e2",
+          "version": "3.7.3"
         }
       },
       {
@@ -60,8 +60,8 @@
         "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
-          "revision": "24282b07c5b6fab13b7f2248eec45bc4e4e46eff",
-          "version": "3.1.10"
+          "revision": "8da7d475a1a060714766d9ad4b24eb0dae243aab",
+          "version": "3.1.11"
         }
       },
       {
@@ -105,8 +105,8 @@
         "repositoryURL": "https://github.com/vapor/service.git",
         "state": {
           "branch": null,
-          "revision": "4907311d7d7f609365982fa302b8b17ffdeb46da",
-          "version": "1.0.1"
+          "revision": "fa5b5de62bd68bcde9a69933f31319e46c7275fb",
+          "version": "1.0.2"
         }
       },
       {
@@ -114,16 +114,7 @@
         "repositoryURL": "https://github.com/vapor/sql.git",
         "state": {
           "branch": null,
-          "revision": "f77bcae7c95150cdab62095e7bf321ed8c7551bd",
-          "version": "2.3.0"
-        }
-      },
-      {
-        "package": "Stripe",
-        "repositoryURL": "https://github.com/vapor-community/stripe-provider.git",
-        "state": {
-          "branch": null,
-          "revision": "bde3f32f109f922a7abbc9988936665410d38b33",
+          "revision": "50eaeb8f52a1ce63f1ff3880e1114dd8757a78a6",
           "version": "2.3.2"
         }
       },
@@ -168,8 +159,8 @@
         "repositoryURL": "https://github.com/vapor/template-kit.git",
         "state": {
           "branch": null,
-          "revision": "aff2d6fc65bfd04579b0201b31a8d6720239c1cf",
-          "version": "1.1.1"
+          "revision": "4b1073d74be9f5c6a5bc63a07a84e83efec26229",
+          "version": "1.1.2"
         }
       },
       {
@@ -177,8 +168,8 @@
         "repositoryURL": "https://github.com/vapor/url-encoded-form.git",
         "state": {
           "branch": null,
-          "revision": "932024f363ee5ff59059cf7d67194a1c271d3d0c",
-          "version": "1.0.5"
+          "revision": "82d8d63bdb76b6dd8febe916c639ab8608dbbaed",
+          "version": "1.0.6"
         }
       },
       {
@@ -204,8 +195,8 @@
         "repositoryURL": "https://github.com/vapor/websocket.git",
         "state": {
           "branch": null,
-          "revision": "21eb4773e25a8ff96fe347a31fe106900a69fa6a",
-          "version": "1.1.1"
+          "revision": "d85e5b6dce4d04065865f77385fc3324f98178f6",
+          "version": "1.1.2"
         }
       }
     ]

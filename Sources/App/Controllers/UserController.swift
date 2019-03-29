@@ -1,9 +1,9 @@
 import Vapor
 import FluentPostgreSQL
-import Stripe
 
 final class UserController {
     private let verifier = UserRequestVerifier()
+    private let squareAPIManager = SquareAPIManager()
     
     // MARK: - GET
     private func getOne(_ req: Request) throws -> Future<User> {
@@ -37,16 +37,13 @@ final class UserController {
     
     // MARK: - POST
     private func create(_ req: Request, data: CreateData) throws -> Future<User> {
-        return try verifier.verify(req)
-            .and(self.stripeClient(req).customer.create(email: data.email))
-            .flatMap { User(uid: $0, customerID: $1.id, email: data.email, firstName: data.firstName, lastName: data.lastName).create(on: req) }
+        return try verifier.verify(req).flatMap {
+                try self.squareAPIManager.createCustomer(data: SquareAPIManager.CreateCustomerRequestData(givenName: data.firstName, familyName: data.lastName, emailAddress: data.email), client: req.client())
+                    .and(result: $0)
+            }.flatMap { User(uid: $1, customerID: $0.id, email: data.email, firstName: data.firstName, lastName: data.lastName).create(on: req) }
     }
     
     // MARK: - Helper Methods
-    private func stripeClient(_ req: Request) throws -> StripeClient {
-        return try req.make(StripeClient.self)
-    }
-    
     private func queryConstructedItems(user: User, req: Request) throws -> Future<[ConstructedItem]> {
         var databaseQuery = try user.constructedItems.query(on: req)
         if let requestQuery = try? req.query.decode(ConstructedItemsQuery.self) {

@@ -13,4 +13,8 @@ struct AppConstants {
     struct Firebase {
         static let projectName = "sammys-prog"
     }
+    
+    struct Square {
+        static let locationID = "CBASEAWfcydIKhMT1ocz6qyVC1sgAQ"
+    }
 }

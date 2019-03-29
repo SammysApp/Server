@@ -1,13 +1,12 @@
 import Vapor
 import FluentPostgreSQL
-import Stripe
 
 final class User: PostgreSQLUUIDModel {
     typealias UID = String
     
     var id: User.ID?
     var uid: UID
-    var customerID: String
+    var customerID: SquareCustomer.ID
     var email: String
     var firstName: String
     var lastName: String
