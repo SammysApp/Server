@@ -1,7 +1,14 @@
 import Vapor
 
 struct GoogleAPIManager {
-    enum PublicKeysEndpoint: HTTPEndpoint {
+    func publicKeys(_ client: Client) -> Future<[String : String]> {
+        return client.send(PublicKeysEndpoints.getPublicKeys)
+            .flatMap { try $0.content.decode([String : String].self) }
+    }
+}
+
+private extension GoogleAPIManager {
+    enum PublicKeysEndpoints: HTTPEndpoint {
         case getPublicKeys
         
         var baseURLString: String { return "https://www.googleapis.com" }
@@ -12,10 +19,5 @@ struct GoogleAPIManager {
                 return (.GET, "/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com")
             }
         }
-    }
-    
-    func publicKeys(_ client: Client) -> Future<[String : String]> {
-        return client.send(PublicKeysEndpoint.getPublicKeys)
-            .flatMap { try $0.content.decode([String : String].self) }
     }
 }
