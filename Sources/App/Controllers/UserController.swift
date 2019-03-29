@@ -31,7 +31,7 @@ final class UserController {
     private func getOutstandingOrders(_ req: Request) throws -> Future<[OutstandingOrder]> {
         return try verifier.verify(req).flatMap { uid in
                 try req.parameters.next(User.self)
-                .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
+                    .guard({ $0.uid == uid }, else: Abort(.unauthorized)) }
             .flatMap { try self.makeOutstandingOrders(user: $0, req: req) }
     }
     
@@ -41,6 +41,26 @@ final class UserController {
                 try self.squareAPIManager.createCustomer(data: SquareAPIManager.CreateCustomerRequestData(givenName: data.firstName, familyName: data.lastName, emailAddress: data.email), client: req.client())
                     .and(result: $0)
             }.flatMap { User(uid: $1, customerID: $0.id, email: data.email, firstName: data.firstName, lastName: data.lastName).create(on: req) }
+    }
+    
+    private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderData) throws -> Future<PurchasedOrder> {
+        return try verifier.verify(req).flatMap { uid in
+            try req.parameters.next(User.self)
+                .guard({ $0.uid == uid }, else: Abort(.unauthorized))
+        }.and(OutstandingOrder.find(data.outstandingOrderID, on: req).unwrap(or: Abort(.badRequest))).flatMap { user, outstandingOrder in
+            let userID = try user.requireID()
+            guard userID == outstandingOrder.userID else { throw Abort(.unauthorized) }
+            return try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
+                return try self.squareAPIManager.charge(
+                    locationID: AppConstants.Square.locationID,
+                    data: SquareAPIManager.ChargeRequestData(idempotencyKey: UUID().uuidString, amountMoney: .init(amount: totalPrice, currency: .usd), cardNonce: data.cardNonce, customerCardID: data.customerCardID, customerID: user.customerID),
+                    client: req.client()
+                ).flatMap { transaction in
+                    return self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: userID, transactionID: transaction.id, totalPrice: totalPrice)
+                        .create(on: req)
+                }
+            }
+        }
     }
     
     // MARK: - Helper Methods
@@ -62,6 +82,17 @@ final class UserController {
         return try constructedItem.totalPrice(on: req)
             .map { try ConstructedItemData(constructedItem: constructedItem, totalPrice: $0) }
     }
+    
+    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transactionID: SquareTransaction.ID, totalPrice: Int) -> PurchasedOrder {
+        return PurchasedOrder(
+            userID: userID,
+            transactionID: transactionID,
+            totalPrice: totalPrice,
+            purchasedDate: Date(),
+            preparedForDate: outstandingOrder.preparedForDate,
+            note: outstandingOrder.note
+        )
+    }
 }
 
 extension UserController: RouteCollection {
@@ -79,6 +110,8 @@ extension UserController: RouteCollection {
         
         // POST /users
         usersRouter.post(CreateData.self, use: create)
+        // POST /users/:user/purchasedOrders
+        usersRouter.post(CreatePurchasedOrderData.self, use: createPurchasedOrder)
     }
 }
 
@@ -111,5 +144,11 @@ private extension UserController {
         let email: String
         let firstName: String
         let lastName: String
+    }
+    
+    struct CreatePurchasedOrderData: Content {
+        let outstandingOrderID: OutstandingOrder.ID
+        let cardNonce: String?
+        let customerCardID: String?
     }
 }
