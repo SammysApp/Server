@@ -69,22 +69,32 @@ final class OutstandingOrderController {
     
     // MARK: - Helper Methods
     private func makeOutstandingOrderData(outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrderData> {
-        return try outstandingOrder.totalPrice(on: req)
-            .map { try OutstandingOrderData(outstandingOrder: outstandingOrder, totalPrice: $0) }
+        return try outstandingOrder.totalPrice(on: req).map { totalPrice in
+            let taxPrice = Int((Double(totalPrice) * AppConstants.taxRateMultiplier).rounded())
+            return try OutstandingOrderData(
+                id: outstandingOrder.requireID(),
+                preparedForDate: outstandingOrder.preparedForDate,
+                note: outstandingOrder.note,
+                totalPrice: totalPrice,
+                taxPrice: taxPrice
+            )
+        }
     }
     
     private func makeConstructedItemData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, req: Request) throws -> Future<ConstructedItemData> {
         return try constructedItem.name(on: req)
             .and(constructedItem.description(on: req))
-            .and(constructedItem.totalPrice(on: req))
-            .map { tuple in
-                let ((name, description), totalPrice) = tuple
+            .and(constructedItem.totalPrice(on: req)).map { result in
+                let ((name, description), totalPrice) = result
                 return try ConstructedItemData(
-                    constructedItem: constructedItem,
-                    outstandingOrderConstructedItem: outstandingOrderConstructedItem,
+                    id: constructedItem.requireID(),
+                    categoryID: constructedItem.categoryID,
+                    userID: constructedItem.userID,
                     name: name,
                     description: description,
-                    totalPrice: totalPrice * outstandingOrderConstructedItem.quantity
+                    quantity: outstandingOrderConstructedItem.quantity,
+                    totalPrice: totalPrice,
+                    isFavorite: constructedItem.isFavorite
                 )
             }
     }
@@ -138,13 +148,7 @@ private extension OutstandingOrderController {
         let preparedForDate: Date?
         let note: String?
         let totalPrice: Int
-        
-        init(outstandingOrder: OutstandingOrder, totalPrice: Int) throws {
-            self.id = try outstandingOrder.requireID()
-            self.preparedForDate = outstandingOrder.preparedForDate
-            self.note = outstandingOrder.note
-            self.totalPrice = totalPrice
-        }
+        let taxPrice: Int
     }
     
     struct ConstructedItemData: Content {
@@ -156,21 +160,6 @@ private extension OutstandingOrderController {
         let quantity: Int
         let totalPrice: Int
         let isFavorite: Bool
-        
-        init(constructedItem: ConstructedItem,
-             outstandingOrderConstructedItem: OutstandingOrderConstructedItem,
-             name: String,
-             description: String,
-             totalPrice: Int) throws {
-            self.id = try constructedItem.requireID()
-            self.categoryID = constructedItem.categoryID
-            self.userID = constructedItem.userID
-            self.name = name
-            self.description = description
-            self.quantity = outstandingOrderConstructedItem.quantity
-            self.totalPrice = totalPrice
-            self.isFavorite = constructedItem.isFavorite
-        }
     }
 }
 
