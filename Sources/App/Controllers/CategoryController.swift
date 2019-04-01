@@ -12,7 +12,7 @@ final class CategoryController {
             }
         }
         return databaseQuery.all()
-            .flatMap { try self.makeCategoryResponseDataArray(categories: $0, req: req) }
+            .flatMap { try self.makeCategoryResponseDataArray(categories: $0, conn: req) }
     }
     
     private func getOne(_ req: Request) throws -> Future<Category> {
@@ -22,13 +22,13 @@ final class CategoryController {
     private func getSubcategories(_ req: Request) throws -> Future<[CategoryResponseData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.subcategories.query(on: req).all() }
-            .flatMap { try self.makeCategoryResponseDataArray(categories: $0, req: req) }
+            .flatMap { try self.makeCategoryResponseDataArray(categories: $0, conn: req) }
     }
     
     private func getItems(_ req: Request) throws -> Future<[ItemResponseData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.items.query(on: req).alsoDecode(CategoryItem.self).all() }
-            .flatMap { try self.makeItemResponseDataArray(itemCategoryItemPairs: $0, req: req) }
+            .flatMap { try self.makeItemResponseDataArray(itemCategoryItemPairs: $0, conn: req) }
             .map { $0.sorted() }
     }
     
@@ -42,9 +42,9 @@ final class CategoryController {
     }
     
     // MARK: - Helper Methods
-    private func makeCategoryResponseDataArray(categories: [Category], req: Request) throws -> Future<[CategoryResponseData]> {
+    private func makeCategoryResponseDataArray(categories: [Category], conn: DatabaseConnectable) throws -> Future<[CategoryResponseData]> {
         return try categories.map { category in
-            try category.subcategories.query(on: req)
+            try category.subcategories.query(on: conn)
                 .count().map { $0 > 0 }.thenThrowing { isParentCategory in
                     try CategoryResponseData(
                         id: category.requireID(),
@@ -55,17 +55,17 @@ final class CategoryController {
                         isConstructable: category.isConstructable
                     )
                 }
-        }.flatten(on: req)
+        }.flatten(on: conn)
     }
     
-    private func makeItemResponseDataArray(itemCategoryItemPairs: [(Item, CategoryItem)], req: Request) throws -> Future<[ItemResponseData]> {
+    private func makeItemResponseDataArray(itemCategoryItemPairs: [(Item, CategoryItem)], conn: DatabaseConnectable) throws -> Future<[ItemResponseData]> {
         return try itemCategoryItemPairs
-            .map { try self.makeItemResponseData(item: $0, categoryItem: $1, req: req) }
-            .flatten(on: req)
+            .map { try self.makeItemResponseData(item: $0, categoryItem: $1, conn: conn) }
+            .flatten(on: conn)
     }
     
-    private func makeItemResponseData(item: Item, categoryItem: CategoryItem, req: Request) throws -> Future<ItemResponseData> {
-        return try categoryItem.modifiers.query(on: req)
+    private func makeItemResponseData(item: Item, categoryItem: CategoryItem, conn: DatabaseConnectable) throws -> Future<ItemResponseData> {
+        return try categoryItem.modifiers.query(on: conn)
             .count().map { $0 > 0 }.thenThrowing { isModifiable in
                 try ItemResponseData(
                     id: item.requireID(),

@@ -26,7 +26,7 @@ final class UserController {
             try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
         }.flatMap { try self.queryConstructedItems(user: $0, req: req) }.flatMap { constructedItems in
-            try constructedItems.map { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }.flatten(on: req)
+            try constructedItems.map { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }.flatten(on: req)
         }
     }
     
@@ -64,25 +64,19 @@ final class UserController {
         }.map { CardResponseData(id: $0.id) }
     }
     
+    // TODO: Only allow one purchased order for outstanding.
     private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderRequestData) throws -> Future<PurchasedOrder> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
-        }.and(OutstandingOrder.find(data.outstandingOrderID, on: req).unwrap(or: Abort(.badRequest))).flatMap { user, outstandingOrder in
-            let userID = try user.requireID()
-            guard userID == outstandingOrder.userID else { throw Abort(.unauthorized) }
-            return try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
-                return try self.squareAPIManager.charge(
-                    locationID: AppConstants.Square.locationID,
-                    // Setting the outstanding order's id as the idempotency key will prevent the user being charged again for this order in case this is called more than once.
-                    data: .init(idempotencyKey: outstandingOrder.requireID().uuidString, amountMoney: .init(amount: totalPrice, currency: .usd), cardNonce: data.cardNonce, customerCardID: data.customerCardID, customerID: user.customerID),
-                    client: req.client()
-                ).flatMap { transaction in
-                    return self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: userID, transaction: transaction, totalPrice: totalPrice)
-                        .create(on: req)
-                }
+        }.and(OutstandingOrder.find(data.outstandingOrderID, on: req)
+            .unwrap(or: Abort(.badRequest))).flatMap { user, outstandingOrder in
+                let userID = try user.requireID()
+                guard userID == outstandingOrder.userID else { throw Abort(.unauthorized) }
+                return try self.charge(user: user, outstandingOrder: outstandingOrder, cardNonce: data.cardNonce, customerCardID: data.customerCardID, req: req)
+                    .flatMap { try self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: user.requireID(), transaction: $0, conn: req).create(on: req) }
+                    .flatMap { try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: $0, conn: req).transform(to: $0) }
             }
-        }
     }
     
     // MARK: - Helper Methods
@@ -96,8 +90,66 @@ final class UserController {
         return databaseQuery.all()
     }
     
-    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemResponseData> {
-        return try constructedItem.totalPrice(on: req).map { totalPrice in
+    private func charge(user: User, outstandingOrder: OutstandingOrder, cardNonce: String? = nil, customerCardID: String? = nil, req: Request) throws -> Future<SquareTransaction> {
+        let idempotencyKey = UUID().uuidString
+        return try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
+            try self.squareAPIManager.charge(
+                locationID: AppConstants.Square.locationID,
+                data: .init(idempotencyKey: idempotencyKey, amountMoney: .init(amount: totalPrice, currency: .usd), cardNonce: cardNonce, customerCardID: customerCardID, customerID: user.customerID),
+                client: req.client()
+            )
+        }
+    }
+    
+    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
+        return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
+            PurchasedOrder(
+                userID: userID,
+                transactionID: transaction.id,
+                totalPrice: totalPrice,
+                purchasedDate: Date(),
+                preparedForDate: outstandingOrder.preparedForDate,
+                note: outstandingOrder.note
+            )
+        }
+    }
+    
+    private func createAndAttachPurchasedConstructedItems(from outstandingOrder: OutstandingOrder, to purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<Void> {
+        return try outstandingOrder.constructedItems.query(on: conn).alsoDecode(OutstandingOrderConstructedItem.self).all()
+            .flatMap { result in
+                try result.map { constructedItem, outstandingOrderConstructedItem in
+                    try self.makePurchasedConstructedItem(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, purchasedOrder: purchasedOrder, conn: conn)
+                        .flatMap { try self.attachCategoryItems(from: constructedItem, to: $0, conn: conn) }
+                }.flatten(on: conn)
+            }
+    }
+    
+    private func makePurchasedConstructedItem(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<PurchasedConstructedItem> {
+        return try constructedItem.totalPrice(on: conn).map { totalPrice in
+            try PurchasedConstructedItem(
+                orderID: purchasedOrder.requireID(),
+                constructedItemID: constructedItem.requireID(),
+                quantity: outstandingOrderConstructedItem.quantity,
+                totalPrice: totalPrice * outstandingOrderConstructedItem.quantity
+            )
+        }
+    }
+    
+    private func attachCategoryItems(from constructedItem: ConstructedItem, to purchasedConstructedItem: PurchasedConstructedItem, conn: DatabaseConnectable) throws -> Future<Void> {
+        return try constructedItem.categoryItems.query(on: conn).all()
+            .flatMap { categoryItems in
+                categoryItems.map { categoryItem in
+                    purchasedConstructedItem.categoryItems.attach(categoryItem, on: conn)
+                        .flatMap { pivot in
+                            pivot.paidPrice = categoryItem.price
+                            return pivot.save(on: conn).transform(to: ())
+                        }
+                }.flatten(on: conn)
+            }
+    }
+    
+    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
+        return try constructedItem.totalPrice(on: conn).map { totalPrice in
             return try ConstructedItemResponseData(
                 id: constructedItem.requireID(),
                 categoryID: constructedItem.categoryID,
@@ -106,17 +158,6 @@ final class UserController {
                 isFavorite: constructedItem.isFavorite
             )
         }
-    }
-    
-    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, totalPrice: Int) -> PurchasedOrder {
-        return PurchasedOrder(
-            userID: userID,
-            transactionID: transaction.id,
-            totalPrice: totalPrice,
-            purchasedDate: Date(),
-            preparedForDate: outstandingOrder.preparedForDate,
-            note: outstandingOrder.note
-        )
     }
 }
 

@@ -9,7 +9,7 @@ final class OutstandingOrderController {
     private func getOne(_ req: Request) throws -> Future<OutstandingOrderResponseData> {
         return try req.parameters.next(OutstandingOrder.self)
             .flatMap { try self.verified($0, req: req) }
-            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, req: req) }
+            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
     
     private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemResponseData]> {
@@ -18,7 +18,7 @@ final class OutstandingOrderController {
                 try outstandingOrder.constructedItems.query(on: req)
                 .alsoDecode(OutstandingOrderConstructedItem.self).all()
             }.flatMap { result in
-                try result.map { try self.makeConstructedItemResponseData(constructedItem: $0, outstandingOrderConstructedItem: $1, req: req) }.flatten(on: req)
+                try result.map { try self.makeConstructedItemResponseData(constructedItem: $0, outstandingOrderConstructedItem: $1, conn: req) }.flatten(on: req)
             }
     }
     
@@ -26,7 +26,7 @@ final class OutstandingOrderController {
     private func create(_ req: Request, data: CreateOutstandingOrderRequestData) throws -> Future<OutstandingOrderResponseData> {
         return try verified(data, req: req)
             .then { OutstandingOrder(userID: $0.userID).create(on: req) }
-            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, req: req) }
+            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
     
     private func attachConstructedItems(_ req: Request, data: AttachConstructedItemsRequestData) throws -> Future<OutstandingOrderResponseData> {
@@ -34,7 +34,7 @@ final class OutstandingOrderController {
             .flatMap { try self.verified($0, req: req) }
             .and(ConstructedItem.query(on: req).filter(\.id ~~ data.ids).all())
             .then { $0.constructedItems.attachAll($1, on: req).transform(to: $0) }
-            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, req: req) }
+            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
     
     // MARK: - PUT
@@ -45,7 +45,7 @@ final class OutstandingOrderController {
                 return try self.verify(userID, req: req)
                     .then { outstandingOrder.update(on: req) }
             } else { return outstandingOrder.update(on: req) }
-        }.flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, req: req) }
+        }.flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
     
     // MARK: - PATCH
@@ -57,7 +57,7 @@ final class OutstandingOrderController {
             .flatMap { pivot, constructedItem in
                 if let quantity = data.quantity { pivot.quantity = quantity }
                 return try pivot.update(on: req)
-                    .transform(to: self.makeConstructedItemResponseData(constructedItem: constructedItem, outstandingOrderConstructedItem: pivot, req: req))
+                    .transform(to: self.makeConstructedItemResponseData(constructedItem: constructedItem, outstandingOrderConstructedItem: pivot, conn: req))
             }
     }
     
@@ -67,12 +67,12 @@ final class OutstandingOrderController {
             .flatMap { try self.verified($0, req: req) }
             .and(req.parameters.next(ConstructedItem.self))
             .flatMap { try $0.constructedItems.detach($1, on: req)
-                .transform(to: self.makeOutstandingOrderResponseData(outstandingOrder: $0, req: req)) }
+                .transform(to: self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req)) }
     }
     
     // MARK: - Helper Methods
-    private func makeOutstandingOrderResponseData(outstandingOrder: OutstandingOrder, req: Request) throws -> Future<OutstandingOrderResponseData> {
-        return try outstandingOrder.totalPrice(on: req).map { totalPrice in
+    private func makeOutstandingOrderResponseData(outstandingOrder: OutstandingOrder, conn: DatabaseConnectable) throws -> Future<OutstandingOrderResponseData> {
+        return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
             let taxPrice = Int((Double(totalPrice) * AppConstants.taxRateMultiplier).rounded())
             return try OutstandingOrderResponseData(
                 id: outstandingOrder.requireID(),
@@ -84,10 +84,10 @@ final class OutstandingOrderController {
         }
     }
     
-    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, req: Request) throws -> Future<ConstructedItemResponseData> {
-        return try constructedItem.name(on: req)
-            .and(constructedItem.description(on: req))
-            .and(constructedItem.totalPrice(on: req)).map { result in
+    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
+        return try constructedItem.name(on: conn)
+            .and(constructedItem.description(on: conn))
+            .and(constructedItem.totalPrice(on: conn)).map { result in
                 let ((name, description), totalPrice) = result
                 return try ConstructedItemResponseData(
                     id: constructedItem.requireID(),

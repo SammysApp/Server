@@ -9,14 +9,14 @@ final class ConstructedItemController {
     private func getOne(_ req: Request) throws -> Future<ConstructedItemResponseData> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }
-            .flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }
+            .flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
     // MARK: - POST
     private func create(_ req: Request, data: CreateConstructedItemRequestData) throws -> Future<ConstructedItemResponseData> {
         return try verified(data, req: req)
             .then { ConstructedItem(categoryID: $0.categoryID, userID: $0.userID).create(on: req) }
-            .flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }
+            .flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
     private func attachCategoryItems(_ req: Request, data: AttachCategoryItemsRequestData) throws -> Future<ConstructedItemResponseData> {
@@ -25,7 +25,7 @@ final class ConstructedItemController {
                 CategoryItem.query(on: req).filter(\.id ~~ data.categoryItemIDs).all()
                     .then { constructedItem.categoryItems.attachAll($0, on: req) }
                     .transform(to: constructedItem)
-            }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }
+            }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
     // MARK: - PUT
@@ -36,7 +36,7 @@ final class ConstructedItemController {
                 return try self.verify(userID, req: req)
                     .then { constructedItem.update(on: req) }
             } else { return constructedItem.update(on: req) }
-        }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }
+        }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
     // MARK: - PATCH
@@ -53,7 +53,7 @@ final class ConstructedItemController {
                 return try self.verify(userID, req: req)
                     .then { constructedItem.update(on: req) }
             } else { return constructedItem.update(on: req) }
-        }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }
+        }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
     // MARK: - DELETE
@@ -63,12 +63,12 @@ final class ConstructedItemController {
                 try req.parameters.next(CategoryItem.self)
                     .then { constructedItem.categoryItems.detach($0, on: req) }
                     .transform(to: constructedItem)
-            }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }
+            }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
     // MARK: - Helper Methods
-    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemResponseData> {
-        return try constructedItem.totalPrice(on: req).map { totalPrice in
+    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
+        return try constructedItem.totalPrice(on: conn).map { totalPrice in
             try ConstructedItemResponseData(
                 id: constructedItem.requireID(),
                 categoryID: constructedItem.categoryID,
