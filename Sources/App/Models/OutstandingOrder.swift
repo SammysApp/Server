@@ -37,9 +37,11 @@ extension OutstandingOrder {
     }
     
     private func totalConstructedItemsPrice(on conn: DatabaseConnectable) throws -> Future<Int> {
-        return try constructedItems.query(on: conn).all().flatMap { constructedItems in
-            return try constructedItems.map { try $0.totalPrice(on: conn) }
-                .flatten(on: conn).map { $0.reduce(0, +) }
-        }
+        return try constructedItems.query(on: conn)
+            .alsoDecode(OutstandingOrderConstructedItem.self).all().flatMap { result in
+                return try result.map { constructedItem, outstandingOrderConstructedItem in
+                    return try constructedItem.totalPrice(on: conn).map { $0  * outstandingOrderConstructedItem.quantity }
+                }.flatten(on: conn).map { $0.reduce(0, +) }
+            }
     }
 }

@@ -93,7 +93,7 @@ final class OutstandingOrderController {
                     name: name,
                     description: description,
                     quantity: outstandingOrderConstructedItem.quantity,
-                    totalPrice: totalPrice,
+                    totalPrice: totalPrice * outstandingOrderConstructedItem.quantity,
                     isFavorite: constructedItem.isFavorite
                 )
             }
