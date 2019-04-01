@@ -25,6 +25,12 @@ extension Category: Content {}
 extension Category: Parameter {}
 extension Category: Migration {}
 
+extension Category: Equatable {
+    static func == (lhs: Category, rhs: Category) -> Bool {
+        do { return try lhs.requireID() == rhs.requireID() } catch { return false }
+    }
+}
+
 extension Category {
     var parentCategory: Parent<Category, Category>? {
         return parent(\.parentCategoryID)
@@ -51,11 +57,5 @@ extension Category {
             .filter(\.categoryID == requireID())
             .filter(\.itemID == item.requireID())
             .first()
-    }
-}
-
-extension Category: Equatable {
-    static func == (lhs: Category, rhs: Category) -> Bool {
-        do { return try lhs.requireID() == rhs.requireID() } catch { return false }
     }
 }

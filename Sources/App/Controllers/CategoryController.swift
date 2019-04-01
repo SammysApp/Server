@@ -4,31 +4,31 @@ import FluentPostgreSQL
 
 final class CategoryController {
     // MARK: - GET
-    private func get(_ req: Request) -> Future<[CategoryData]> {
+    private func get(_ req: Request) -> Future<[CategoryResponseData]> {
         var databaseQuery = Category.query(on: req)
-        if let requestQuery = try? req.query.decode(CategoryQuery.self) {
+        if let requestQuery = try? req.query.decode(GetCategoriesQueryData.self) {
             if let isRoot = requestQuery.isRoot, isRoot {
                 databaseQuery = databaseQuery.filter(\.parentCategoryID == nil)
             }
         }
         return databaseQuery.all()
-            .flatMap { try self.makeCategoryDataArray(categories: $0, req: req) }
+            .flatMap { try self.makeCategoryResponseDataArray(categories: $0, req: req) }
     }
     
     private func getOne(_ req: Request) throws -> Future<Category> {
         return try req.parameters.next(Category.self)
     }
     
-    private func getSubcategories(_ req: Request) throws -> Future<[CategoryData]> {
+    private func getSubcategories(_ req: Request) throws -> Future<[CategoryResponseData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.subcategories.query(on: req).all() }
-            .flatMap { try self.makeCategoryDataArray(categories: $0, req: req) }
+            .flatMap { try self.makeCategoryResponseDataArray(categories: $0, req: req) }
     }
     
-    private func getItems(_ req: Request) throws -> Future<[ItemData]> {
+    private func getItems(_ req: Request) throws -> Future<[ItemResponseData]> {
         return try req.parameters.next(Category.self)
             .flatMap { try $0.items.query(on: req).alsoDecode(CategoryItem.self).all() }
-            .flatMap { try self.makeItemDataArray(itemCategoryItemPairs: $0, req: req) }
+            .flatMap { try self.makeItemResponseDataArray(itemCategoryItemPairs: $0, req: req) }
             .map { $0.sorted() }
     }
     
@@ -42,25 +42,40 @@ final class CategoryController {
     }
     
     // MARK: - Helper Methods
-    private func makeCategoryDataArray(categories: [Category], req: Request) throws
-        -> Future<[CategoryData]> {
+    private func makeCategoryResponseDataArray(categories: [Category], req: Request) throws -> Future<[CategoryResponseData]> {
         return try categories.map { category in
             try category.subcategories.query(on: req)
-                .count().map { $0 > 0 }.thenThrowing
-                { try CategoryData(category: category, isParentCategory: $0) }
-            }.flatten(on: req)
+                .count().map { $0 > 0 }.thenThrowing { isParentCategory in
+                    try CategoryResponseData(
+                        id: category.requireID(),
+                        parentCategoryID: category.parentCategoryID,
+                        name: category.name,
+                        imageURL: category.imageURL,
+                        isParentCategory: isParentCategory,
+                        isConstructable: category.isConstructable
+                    )
+                }
+        }.flatten(on: req)
     }
     
-    private func makeItemDataArray(itemCategoryItemPairs: [(Item, CategoryItem)], req: Request) throws -> Future<[ItemData]> {
+    private func makeItemResponseDataArray(itemCategoryItemPairs: [(Item, CategoryItem)], req: Request) throws -> Future<[ItemResponseData]> {
         return try itemCategoryItemPairs
-            .map { try self.makeItemData(item: $0, categoryItem: $1, req: req) }
+            .map { try self.makeItemResponseData(item: $0, categoryItem: $1, req: req) }
             .flatten(on: req)
     }
     
-    private func makeItemData(item: Item, categoryItem: CategoryItem, req: Request) throws -> Future<ItemData> {
+    private func makeItemResponseData(item: Item, categoryItem: CategoryItem, req: Request) throws -> Future<ItemResponseData> {
         return try categoryItem.modifiers.query(on: req)
-            .count().map { $0 > 0 }
-            .thenThrowing { try ItemData(item: item, categoryItem: categoryItem, isModifiable: $0) }
+            .count().map { $0 > 0 }.thenThrowing { isModifiable in
+                try ItemResponseData(
+                    id: item.requireID(),
+                    categoryItemID: categoryItem.requireID(),
+                    name: item.name,
+                    description: categoryItem.description,
+                    price: categoryItem.price,
+                    isModifiable: isModifiable
+                )
+            }
     }
 }
 
@@ -82,55 +97,35 @@ extension CategoryController: RouteCollection {
 }
 
 private extension CategoryController {
-    struct CategoryQuery: Codable {
+    struct GetCategoriesQueryData: Codable {
         let isRoot: Bool?
     }
 }
 
 private extension CategoryController {
-    struct CategoryData: Content {
+    struct CategoryResponseData: Content {
         var id: Category.ID
         var parentCategoryID: Category.ID?
         var name: String
         var imageURL: String?
         var isParentCategory: Bool
         var isConstructable: Bool
-        
-        init(category: Category, isParentCategory: Bool) throws {
-            self.id = try category.requireID()
-            self.parentCategoryID = category.parentCategoryID
-            self.name = category.name
-            self.imageURL = category.imageURL
-            self.isParentCategory = isParentCategory
-            self.isConstructable = category.isConstructable
-        }
     }
 
-    struct ItemData: Content {
+    struct ItemResponseData: Content {
         let id: Item.ID
         let categoryItemID: CategoryItem.ID?
         let name: String
         let description: String?
         let price: Int?
         let isModifiable: Bool
-        
-        init(item: Item,
-             categoryItem: CategoryItem,
-             isModifiable: Bool) throws {
-            self.id = try item.requireID()
-            self.categoryItemID = try categoryItem.requireID()
-            self.name = item.name
-            self.description = categoryItem.description
-            self.price = categoryItem.price
-            self.isModifiable = isModifiable
-        }
     }
 }
 
-private extension Array where Element == CategoryController.ItemData {
+private extension Array where Element == CategoryController.ItemResponseData {
     var isAllPriced: Bool { return allSatisfy { $0.price != nil } }
     
-    func sorted() -> [CategoryController.ItemData] {
+    func sorted() -> [CategoryController.ItemResponseData] {
         if isAllPriced { return sorted { $0.price! < $1.price! } }
         else { return sorted { $0.name < $1.name } }
     }

@@ -5,7 +5,8 @@ final class Item: PostgreSQLUUIDModel {
     var id: Item.ID?
     var name: String
     
-    init(id: Item.ID? = nil, name: String) {
+    init(id: Item.ID? = nil,
+         name: String) {
         self.id = id
         self.name = name
     }

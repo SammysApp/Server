@@ -6,6 +6,16 @@ final class Modifier: PostgreSQLUUIDModel {
     var name: String
     var price: Int?
     var parentCategoryItemID: CategoryItem.ID?
+    
+    init(id: Modifier.ID? = nil,
+         name: String,
+         price: Int? = nil,
+         parentCategoryItemID: CategoryItem.ID? = nil) {
+        self.id = id
+        self.name = name
+        self.price = price
+        self.parentCategoryItemID = parentCategoryItemID
+    }
 }
 
 extension Modifier: Purchasable {}

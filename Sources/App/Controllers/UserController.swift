@@ -1,4 +1,5 @@
 import Vapor
+import Fluent
 import FluentPostgreSQL
 
 final class UserController {
@@ -20,14 +21,12 @@ final class UserController {
         }
     }
     
-    private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemData]> {
+    private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemResponseData]> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
         }.flatMap { try self.queryConstructedItems(user: $0, req: req) }.flatMap { constructedItems in
-            try constructedItems.map { constructedItem in
-                try constructedItem.totalPrice(on: req).map { try ConstructedItemData(constructedItem: constructedItem, totalPrice: $0) }
-            }.flatten(on: req)
+            try constructedItems.map { try self.makeConstructedItemResponseData(constructedItem: $0, req: req) }.flatten(on: req)
         }
     }
     
@@ -39,20 +38,33 @@ final class UserController {
     }
     
     // MARK: - POST
-    private func create(_ req: Request, data: CreateData) throws -> Future<User> {
+    private func create(_ req: Request, data: CreateUserRequestData) throws -> Future<User> {
         return try verifier.verify(req).flatMap { uid in
-            try self.squareAPIManager.createCustomer(data: .init(givenName: data.firstName, familyName: data.lastName, emailAddress: data.email), client: req.client()).and(result: uid)
-        }.flatMap { User(uid: $1, customerID: $0.id, email: data.email, firstName: data.firstName, lastName: data.lastName).create(on: req) }
+            try self.squareAPIManager.createCustomer(data: .init(
+                givenName: data.firstName,
+                familyName: data.lastName,
+                emailAddress: data.email
+            ), client: req.client()).and(result: uid)
+        }.flatMap { customer, uid in
+            User(uid: uid, customerID: customer.id, email: data.email, firstName: data.firstName, lastName: data.lastName)
+                .create(on: req)
+        }
     }
     
-    private func createCard(_ req: Request, data: CreateCardData) throws -> Future<CardData> {
+    private func createCard(_ req: Request, data: CreateCardRequestData) throws -> Future<CardResponseData> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
-        }.flatMap { try self.squareAPIManager.createCustomerCard(customerID: $0.customerID, data: .init(cardNonce: data.cardNonce), client: req.client()) }.map(CardData.init)
+        }.flatMap { user in
+            try self.squareAPIManager.createCustomerCard(
+                customerID: user.customerID,
+                data: .init(cardNonce: data.cardNonce),
+                client: req.client()
+            )
+        }.map { CardResponseData(id: $0.id) }
     }
     
-    private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderData) throws -> Future<PurchasedOrder> {
+    private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderRequestData) throws -> Future<PurchasedOrder> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
@@ -62,10 +74,11 @@ final class UserController {
             return try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
                 return try self.squareAPIManager.charge(
                     locationID: AppConstants.Square.locationID,
-                    data: .init(idempotencyKey: UUID().uuidString, amountMoney: .init(amount: totalPrice, currency: .usd), cardNonce: data.cardNonce, customerCardID: data.customerCardID, customerID: user.customerID),
+                    // Setting the outstanding order's id as the idempotency key will prevent the user being charged again for this order in case this is called more than once.
+                    data: .init(idempotencyKey: outstandingOrder.requireID().uuidString, amountMoney: .init(amount: totalPrice, currency: .usd), cardNonce: data.cardNonce, customerCardID: data.customerCardID, customerID: user.customerID),
                     client: req.client()
                 ).flatMap { transaction in
-                    return self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: userID, transactionID: transaction.id, totalPrice: totalPrice)
+                    return self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: userID, transaction: transaction, totalPrice: totalPrice)
                         .create(on: req)
                 }
             }
@@ -75,7 +88,7 @@ final class UserController {
     // MARK: - Helper Methods
     private func queryConstructedItems(user: User, req: Request) throws -> Future<[ConstructedItem]> {
         var databaseQuery = try user.constructedItems.query(on: req)
-        if let requestQuery = try? req.query.decode(ConstructedItemsQuery.self) {
+        if let requestQuery = try? req.query.decode(GetConstructedItemsQueryData.self) {
             if let isFavorite = requestQuery.isFavorite {
                 databaseQuery = databaseQuery.filter(\.isFavorite == isFavorite)
             }
@@ -83,10 +96,22 @@ final class UserController {
         return databaseQuery.all()
     }
     
-    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transactionID: SquareTransaction.ID, totalPrice: Int) -> PurchasedOrder {
+    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItemResponseData> {
+        return try constructedItem.totalPrice(on: req).map { totalPrice in
+            return try ConstructedItemResponseData(
+                id: constructedItem.requireID(),
+                categoryID: constructedItem.categoryID,
+                userID: constructedItem.userID,
+                totalPrice: totalPrice,
+                isFavorite: constructedItem.isFavorite
+            )
+        }
+    }
+    
+    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, totalPrice: Int) -> PurchasedOrder {
         return PurchasedOrder(
             userID: userID,
-            transactionID: transactionID,
+            transactionID: transaction.id,
             totalPrice: totalPrice,
             purchasedDate: Date(),
             preparedForDate: outstandingOrder.preparedForDate,
@@ -109,60 +134,48 @@ extension UserController: RouteCollection {
         usersRouter.get(User.parameter, "outstandingOrders", use: getOutstandingOrders)
         
         // POST /users
-        usersRouter.post(CreateData.self, use: create)
+        usersRouter.post(CreateUserRequestData.self, use: create)
         // POST /users/:user/cards
-        usersRouter.post(CreateCardData.self, at: User.parameter, "cards", use: createCard)
+        usersRouter.post(CreateCardRequestData.self, at: User.parameter, "cards", use: createCard)
         // POST /users/:user/purchasedOrders
-        usersRouter.post(CreatePurchasedOrderData.self, at: User.parameter, "purchasedOrders", use: createPurchasedOrder)
+        usersRouter.post(CreatePurchasedOrderRequestData.self, at: User.parameter, "purchasedOrders", use: createPurchasedOrder)
     }
 }
 
 private extension UserController {
-    struct ConstructedItemsQuery: Codable {
+    struct GetConstructedItemsQueryData: Codable {
         let isFavorite: Bool?
     }
 }
 
 private extension UserController {
-    struct ConstructedItemData: Content {
-        let id: ConstructedItem.ID
-        let categoryID: Category.ID
-        let userID: User.ID?
-        let totalPrice: Int
-        let isFavorite: Bool
-        
-        init(constructedItem: ConstructedItem, totalPrice: Int) throws {
-            self.id = try constructedItem.requireID()
-            self.categoryID = constructedItem.categoryID
-            self.userID = constructedItem.userID
-            self.isFavorite = constructedItem.isFavorite
-            self.totalPrice = totalPrice
-        }
-    }
-    
-    struct CardData: Content {
-        let id: SquareCard.ID
-        
-        init(card: SquareCard) {
-            self.id = card.id
-        }
-    }
-}
-
-private extension UserController {
-    struct CreateData: Content {
+    struct CreateUserRequestData: Content {
         let email: String
         let firstName: String
         let lastName: String
     }
     
-    struct CreateCardData: Content {
+    struct CreateCardRequestData: Content {
         let cardNonce: String
     }
     
-    struct CreatePurchasedOrderData: Content {
+    struct CreatePurchasedOrderRequestData: Content {
         let outstandingOrderID: OutstandingOrder.ID
         let cardNonce: String?
         let customerCardID: String?
+    }
+}
+
+private extension UserController {
+    struct ConstructedItemResponseData: Content {
+        let id: ConstructedItem.ID
+        let categoryID: Category.ID
+        let userID: User.ID?
+        let totalPrice: Int
+        let isFavorite: Bool
+    }
+    
+    struct CardResponseData: Content {
+        let id: SquareCard.ID
     }
 }

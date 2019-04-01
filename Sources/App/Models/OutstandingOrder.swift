@@ -8,9 +8,13 @@ final class OutstandingOrder: PostgreSQLUUIDModel {
     var note: String?
     
     init(id: OutstandingOrder.ID? = nil,
-         userID: User.ID? = nil) {
+         userID: User.ID? = nil,
+         preparedForDate: Date? = nil,
+         note: String? = nil) {
         self.id = id
         self.userID = userID
+        self.preparedForDate = preparedForDate
+        self.note = note
     }
 }
 

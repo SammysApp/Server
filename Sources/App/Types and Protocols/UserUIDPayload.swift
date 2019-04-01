@@ -23,7 +23,7 @@ extension UserUIDPayload {
     var uid: User.UID { return sub.value }
 }
 
-struct AuthTimeClaim: JWTUnixEpochClaim {
+private struct AuthTimeClaim: JWTUnixEpochClaim {
     var value: Date
 }
 

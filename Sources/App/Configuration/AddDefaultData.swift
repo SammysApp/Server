@@ -14,7 +14,7 @@ struct AddDefaultData {
             .appendingPathComponent(Constants.baseFilesPath)
     }
     
-    // Add items.
+    // MARK: - Items
     private static func makeItemsData() throws -> [ItemData] {
         let itemsDataURL = baseFilesURL.appendingPathComponent(Constants.itemsFileName)
         return try JSONDecoder().decode([ItemData].self, from: Data(contentsOf: itemsDataURL))
@@ -31,7 +31,7 @@ struct AddDefaultData {
         )
     }
     
-    // Add categories.
+    // MARK: - Categories
     private static func makeCategoriesData() throws -> [CategoryData] {
         let categoriesDataURL = baseFilesURL.appendingPathComponent(Constants.categoriesFileName)
         return try JSONDecoder().decode([CategoryData].self, from: Data(contentsOf: categoriesDataURL))
@@ -76,8 +76,7 @@ struct AddDefaultData {
     private static func attach(_ itemID: Item.ID, to category: Category, on conn: PostgreSQLConnection) -> Future<Void> {
         return Item.find(itemID, on: conn)
             .unwrap(or: AddDefaultDataError.cantFindItem)
-            .then { category.items.attach($0, on: conn) }
-            .flatMap { categoryItem in
+            .then { category.items.attach($0, on: conn) }.flatMap { categoryItem in
                 guard let categoryItemData = categoryItemsData.first(where: { $0.category == categoryItem.categoryID && $0.item == categoryItem.itemID })
                     else { return conn.future() }
                 return try update(categoryItem, with: categoryItemData, on: conn)
@@ -92,6 +91,7 @@ struct AddDefaultData {
         return categoryItem.save(on: conn)
     }
     
+    // MARK: - Modifiers
     private static func create(_ modifiers: [Modifier]?, with parentCategoryItemID: CategoryItem.ID, on conn: PostgreSQLConnection) -> Future<Void> {
         return Future<Void>.andAll(
             modifiers?.map { modifier in
@@ -109,7 +109,7 @@ extension AddDefaultData: PostgreSQLMigration {
             return Future<Void>.andAll([
                 create(try makeItemsData(), on: conn),
                 create(try makeCategoriesData(), on: conn)
-                ], eventLoop: conn.eventLoop)
+            ], eventLoop: conn.eventLoop)
         }
         catch { return conn.future(error: error) }
     }
