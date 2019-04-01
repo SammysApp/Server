@@ -51,3 +51,9 @@ extension PurchasedOrder: Migration {
         }
     }
 }
+
+extension PurchasedOrder {
+    var constructedItems: Children<PurchasedOrder, PurchasedConstructedItem> {
+        return children(\.orderID)
+    }
+}
