@@ -39,14 +39,15 @@ struct AddDefaultData {
     
     private static let categoryItemsData: [CategoryItemData] = {
         let categoryItemsDataURL = baseFilesURL.appendingPathComponent(Constants.categoryItemsFileName)
-        return (try? JSONDecoder().decode([CategoryItemData].self, from: Data(contentsOf: categoryItemsDataURL))) ?? []
+        do { return try JSONDecoder().decode([CategoryItemData].self, from: Data(contentsOf: categoryItemsDataURL)) }
+        catch { preconditionFailure(error.localizedDescription) }
     }()
     
     private static func makeCategory(categoryData: CategoryData, parentCategoryID: Category.ID?) -> Category {
         return Category(
             id: categoryData.id,
-            name: categoryData.name,
             parentCategoryID: parentCategoryID,
+            name: categoryData.name,
             imageURL: categoryData.imageURL,
             isConstructable: categoryData.isConstructable ?? false
         )
@@ -92,12 +93,17 @@ struct AddDefaultData {
     }
     
     // MARK: - Modifiers
-    private static func create(_ modifiers: [Modifier]?, with parentCategoryItemID: CategoryItem.ID, on conn: PostgreSQLConnection) -> Future<Void> {
+    private static func makeModifier(modifierData: ModifierData, parentCategoryItemID: CategoryItem.ID) -> Modifier {
+        return Modifier(
+            parentCategoryItemID: parentCategoryItemID,
+            name: modifierData.name,
+            price: modifierData.price
+        )
+    }
+    
+    private static func create(_ modifiersData: [ModifierData]?, with parentCategoryItemID: CategoryItem.ID, on conn: PostgreSQLConnection) -> Future<Void> {
         return Future<Void>.andAll(
-            modifiers?.map { modifier in
-                modifier.parentCategoryItemID = parentCategoryItemID
-                return modifier.create(on: conn).transform(to: ())
-            } ?? [],
+            modifiersData?.map { makeModifier(modifierData: $0, parentCategoryItemID: parentCategoryItemID).create(on: conn).transform(to: ()) } ?? [],
             eventLoop: conn.eventLoop
         )
     }
@@ -120,11 +126,6 @@ extension AddDefaultData: PostgreSQLMigration {
 }
 
 private extension AddDefaultData {
-    struct ItemData: Codable {
-        let id: Item.ID
-        let name: String
-    }
-    
     struct CategoryData: Codable {
         let id: Category.ID
         let name: String
@@ -134,12 +135,22 @@ private extension AddDefaultData {
         let subcategories: [CategoryData]?
     }
     
+    struct ItemData: Codable {
+        let id: Item.ID
+        let name: String
+    }
+    
     struct CategoryItemData: Codable {
         let category: Category.ID
         let item: Item.ID
         let description: String?
         let price: Int?
-        let modifiers: [Modifier]?
+        let modifiers: [ModifierData]?
+    }
+    
+    struct ModifierData: Codable {
+        let name: String
+        let price: Int?
     }
 }
 

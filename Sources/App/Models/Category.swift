@@ -3,21 +3,24 @@ import FluentPostgreSQL
 
 final class Category: PostgreSQLUUIDModel {
     var id: Category.ID?
-    var name: String
     var parentCategoryID: Category.ID?
+    var name: String
     var imageURL: String?
     var isConstructable: Bool
+    var availability: Availability
     
     init(id: Category.ID? = nil,
-         name: String,
          parentCategoryID: Category.ID? = nil,
+         name: String,
          imageURL: String? = nil,
-         isConstructable: Bool = false) {
+         isConstructable: Bool = false,
+         availability: Availability = .isAvailable) {
         self.id = id
-        self.name = name
         self.parentCategoryID = parentCategoryID
+        self.name = name
         self.imageURL = imageURL
         self.isConstructable = isConstructable
+        self.availability = availability
     }
 }
 

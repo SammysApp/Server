@@ -4,11 +4,14 @@ import FluentPostgreSQL
 final class Item: PostgreSQLUUIDModel {
     var id: Item.ID?
     var name: String
+    var availability: Availability
     
     init(id: Item.ID? = nil,
-         name: String) {
+         name: String,
+         availability: Availability = .isAvailable) {
         self.id = id
         self.name = name
+        self.availability = availability
     }
 }
 

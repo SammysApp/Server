@@ -3,18 +3,21 @@ import FluentPostgreSQL
 
 final class Modifier: PostgreSQLUUIDModel {
     var id: Modifier.ID?
+    var parentCategoryItemID: CategoryItem.ID
     var name: String
     var price: Int?
-    var parentCategoryItemID: CategoryItem.ID?
+    var availability: Availability
     
     init(id: Modifier.ID? = nil,
+         parentCategoryItemID: CategoryItem.ID,
          name: String,
          price: Int? = nil,
-         parentCategoryItemID: CategoryItem.ID? = nil) {
+         availability: Availability = .isAvailable) {
         self.id = id
+        self.parentCategoryItemID = parentCategoryItemID
         self.name = name
         self.price = price
-        self.parentCategoryItemID = parentCategoryItemID
+        self.availability = availability
     }
 }
 
