@@ -118,7 +118,7 @@ final class UserController {
         return try outstandingOrder.constructedItems.query(on: conn).alsoDecode(OutstandingOrderConstructedItem.self).all()
             .flatMap { result in
                 try result.map { constructedItem, outstandingOrderConstructedItem in
-                    try self.makePurchasedConstructedItem(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, purchasedOrder: purchasedOrder, conn: conn)
+                    try self.makePurchasedConstructedItem(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, purchasedOrder: purchasedOrder, conn: conn).create(on: conn)
                         .flatMap { try self.attachCategoryItems(from: constructedItem, to: $0, conn: conn) }
                 }.flatten(on: conn)
             }

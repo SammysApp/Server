@@ -5,8 +5,6 @@ final class ConstructedItemCategoryItem: PostgreSQLUUIDModel, ModifiablePivot {
     typealias Left = ConstructedItem
     typealias Right = CategoryItem
     
-    static let name = "CategoryItem_ConstructedItem"
-    
     static let leftIDKey: LeftIDKey = \.constructedItemID
     static let rightIDKey: RightIDKey = \.categoryItemID
     
