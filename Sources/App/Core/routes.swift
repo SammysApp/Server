@@ -2,6 +2,9 @@ import Vapor
 
 /// Registers application routes.
 public func routes(_ router: Router) throws {
+    let storeHoursController = StoreHoursController()
+    try router.register(collection: storeHoursController)
+    
     let userController = UserController()
     try router.register(collection: userController)
     

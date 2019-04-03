@@ -1,8 +1,6 @@
 import Vapor
 import FluentPostgreSQL
 
-var socket: WebSocket?
-
 /// Called before application initializes.
 public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
     // Register routes to the router.
@@ -43,6 +41,8 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     // Configure migrations.
     var migrations = MigrationConfig()
     
+    migrations.add(model: StoreHours.self, database: .psql)
+    
     migrations.add(migration: Availability.self, database: .psql)
     migrations.add(migration: OrderProgress.self, database: .psql)
     
@@ -52,6 +52,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     migrations.add(model: Modifier.self, database: .psql)
     
     migrations.add(model: User.self, database: .psql)
+    
     migrations.add(model: ConstructedItem.self, database: .psql)
     migrations.add(model: ConstructedItemCategoryItem.self, database: .psql)
     migrations.add(model: ConstructedItemModifier.self, database: .psql)

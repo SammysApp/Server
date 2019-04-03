@@ -4,14 +4,40 @@ import FluentPostgreSQL
 struct AddDefaultData {
     private struct Constants {
         static let baseFilesPath = "Sources/App/Configuration"
-        static let itemsFileName = "items.json"
-        static let categoriesFileName = "categories.json"
-        static let categoryItemsFileName = "category_items.json"
+        static let storeHoursFileName = "StoreHours.json"
+        static let itemsFileName = "Items.json"
+        static let categoriesFileName = "Categories.json"
+        static let categoryItemsFileName = "CategoryItems.json"
     }
     
     private static var baseFilesURL: URL {
         return URL(fileURLWithPath: DirectoryConfig.detect().workDir)
             .appendingPathComponent(Constants.baseFilesPath)
+    }
+    
+    // MARK: - Store Hours
+    private static func makeStoreHoursData() throws -> [StoreHoursData] {
+        let storeHoursDataURL = baseFilesURL.appendingPathComponent(Constants.storeHoursFileName)
+        return try JSONDecoder().decode([StoreHoursData].self, from: Data(contentsOf: storeHoursDataURL))
+    }
+    
+    private static func makeStoreHours(storeHoursData: StoreHoursData) -> StoreHours {
+        return StoreHours(
+            weekday: storeHoursData.weekday,
+            openingHour: storeHoursData.openingHour,
+            openingMinute: storeHoursData.openingMinute,
+            closingHour: storeHoursData.closingHour,
+            closingMinute: storeHoursData.closingMinute,
+            isOpen: storeHoursData.isOpen ?? true,
+            isClosingNextDay: storeHoursData.isClosingNextDay ?? false
+        )
+    }
+    
+    private static func create(_ storeHoursData: [StoreHoursData], on conn: PostgreSQLConnection) -> Future<Void> {
+        return Future<Void>.andAll(
+            storeHoursData.map { makeStoreHours(storeHoursData: $0).create(on: conn).transform(to: ()) },
+            eventLoop: conn.eventLoop
+        )
     }
     
     // MARK: - Items
@@ -113,6 +139,7 @@ extension AddDefaultData: PostgreSQLMigration {
     static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
         do {
             return Future<Void>.andAll([
+                create(try makeStoreHoursData(), on: conn),
                 create(try makeItemsData(), on: conn),
                 create(try makeCategoriesData(), on: conn)
             ], eventLoop: conn.eventLoop)
@@ -126,6 +153,16 @@ extension AddDefaultData: PostgreSQLMigration {
 }
 
 private extension AddDefaultData {
+    struct StoreHoursData: Codable {
+        let weekday: Int
+        let openingHour: Int?
+        let openingMinute: Int?
+        let closingHour: Int?
+        let closingMinute: Int?
+        let isOpen: Bool?
+        let isClosingNextDay: Bool?
+    }
+    
     struct CategoryData: Codable {
         let id: Category.ID
         let name: String

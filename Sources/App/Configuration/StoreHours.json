@@ -1,0 +1,37 @@
+[
+  {
+    "weekday": 1,
+    "openingHour": 7,
+    "closingHour": 21
+  },
+  {
+    "weekday": 2,
+    "openingHour": 6,
+    "closingHour": 20
+  },
+  {
+    "weekday": 3,
+    "openingHour": 6,
+    "closingHour": 21
+  },
+  {
+    "weekday": 4,
+    "openingHour": 6,
+    "closingHour": 21
+  },
+  {
+    "weekday": 5,
+    "openingHour": 6,
+    "closingHour": 22
+  },
+  {
+    "weekday": 6,
+    "openingHour": 6,
+    "closingHour": 15
+  },
+  {
+    "weekday": 7,
+    "closingHour": 1,
+    "isClosingNextDay": true
+  },
+]
