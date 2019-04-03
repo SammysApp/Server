@@ -76,6 +76,7 @@ final class UserController {
                 return try self.charge(user: user, outstandingOrder: outstandingOrder, cardNonce: data.cardNonce, customerCardID: data.customerCardID, req: req)
                     .flatMap { try self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: user.requireID(), transaction: $0, conn: req).create(on: req) }
                     .flatMap { try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: $0, conn: req).transform(to: $0) }
+                    .do { do { try OrderSessionController.default.send($0) } catch { print(error.localizedDescription) } }
             }
     }
     
