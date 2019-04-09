@@ -76,6 +76,7 @@ final class OutstandingOrderController {
             let taxPrice = Int((Double(totalPrice) * AppConstants.taxRateMultiplier).rounded())
             return try OutstandingOrderResponseData(
                 id: outstandingOrder.requireID(),
+                userID: outstandingOrder.userID,
                 preparedForDate: outstandingOrder.preparedForDate,
                 note: outstandingOrder.note,
                 totalPrice: totalPrice,
@@ -164,6 +165,7 @@ private extension OutstandingOrderController {
 private extension OutstandingOrderController {
     struct OutstandingOrderResponseData: Content {
         let id: OutstandingOrder.ID
+        let userID: User.ID?
         let preparedForDate: Date?
         let note: String?
         let totalPrice: Int
