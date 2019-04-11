@@ -39,11 +39,13 @@ final class OutstandingOrderController {
     
     // MARK: - PUT
     private func update(_ req: Request, outstandingOrder: OutstandingOrder) throws -> Future<OutstandingOrderResponseData> {
-        return try req.parameters.next(OutstandingOrder.self).flatMap { existing in
+        return try req.parameters.next(OutstandingOrder.self)
+            .flatMap { try self.verified($0, req: req) }.flatMap { existing in
             outstandingOrder.id = try existing.requireID()
             if let userID = outstandingOrder.userID {
                 return try self.verify(userID, req: req)
                     .then { outstandingOrder.update(on: req) }
+                    .flatMap { try self.updateConstructedItems(of: $0, with: userID, on: req) }
             } else { return outstandingOrder.update(on: req) }
         }.flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
@@ -71,6 +73,15 @@ final class OutstandingOrderController {
     }
     
     // MARK: - Helper Methods
+    private func updateConstructedItems(of outstandingOrder: OutstandingOrder, with userID: User.ID, on conn: DatabaseConnectable) throws -> Future<OutstandingOrder> {
+        return try outstandingOrder.constructedItems.query(on: conn).all().flatMap { constructedItems in
+            constructedItems.map { constructedItem in
+                constructedItem.userID = userID
+                return constructedItem.update(on: conn).transform(to: ())
+            }.flatten(on: conn).transform(to: outstandingOrder)
+        }
+    }
+    
     private func makeOutstandingOrderResponseData(outstandingOrder: OutstandingOrder, conn: DatabaseConnectable) throws -> Future<OutstandingOrderResponseData> {
         return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
             let taxPrice = Int((Double(totalPrice) * AppConstants.taxRateMultiplier).rounded())
