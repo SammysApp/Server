@@ -80,16 +80,46 @@ final class ConstructedItemController {
     }
     
     // MARK: - Helper Methods
-    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
-        return try constructedItem.totalPrice(on: conn).map { totalPrice in
-            try ConstructedItemResponseData(
-                id: constructedItem.requireID(),
-                categoryID: constructedItem.categoryID,
-                userID: constructedItem.userID,
-                totalPrice: totalPrice,
-                isFavorite: constructedItem.isFavorite
-            )
+    private func getRequirementSatisfied(for constructedItem: ConstructedItem, on conn: DatabaseConnectable) -> Future<Bool> {
+        return getMinimumItemsRequirementSatisfied(for: constructedItem, on: conn)
+    }
+    
+    private func getMinimumItemsRequirementSatisfied(for constructedItem: ConstructedItem, on conn: DatabaseConnectable) -> Future<Bool> {
+        return guardMinimumItemsRequirementSatisfied(for: constructedItem, on: conn)
+            .transform(to: true).catchMap { error in
+                if case ConstructedItemControllerError.minimumItemsRequirementNotSatisfied = error { return false }
+                else { throw error }
+            }
+    }
+    
+    private func guardMinimumItemsRequirementSatisfied(for constructedItem: ConstructedItem, on conn: DatabaseConnectable) -> Future<Void> {
+        return constructedItem.category.get(on: conn).flatMap { parentCategory in
+            try parentCategory.subcategories.query(on: conn).all().flatMap { categories in
+                try categories.map { category in
+                    if let minimumItems = category.minimumItems {
+                        return try constructedItem.categoryItems.query(on: conn)
+                            .filter(\.categoryID == category.requireID()).count()
+                            .guard({ $0 == minimumItems }, else: ConstructedItemControllerError.minimumItemsRequirementNotSatisfied)
+                            .transform(to: ())
+                    } else { return conn.future() }
+                }.flatten(on: conn)
+            }
         }
+    }
+    
+    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
+        return try constructedItem.totalPrice(on: conn)
+            .and(getRequirementSatisfied(for: constructedItem, on: conn))
+            .map { totalPrice, isRequirementsSatisfied in
+                try ConstructedItemResponseData(
+                    id: constructedItem.requireID(),
+                    categoryID: constructedItem.categoryID,
+                    userID: constructedItem.userID,
+                    totalPrice: totalPrice,
+                    isFavorite: constructedItem.isFavorite,
+                    isRequirementsSatisfied: isRequirementsSatisfied
+                )
+            }
     }
     
     private func makeItemResponseDataArray(categoryItemItemPairs: [(CategoryItem, Item)]) throws -> [ItemResponseData] {
@@ -173,11 +203,12 @@ private extension ConstructedItemController {
 
 private extension ConstructedItemController {
     struct ConstructedItemResponseData: Content {
-        var id: ConstructedItem.ID
-        var categoryID: Category.ID
-        var userID: User.ID?
-        var totalPrice: Int
-        var isFavorite: Bool
+        let id: ConstructedItem.ID
+        let categoryID: Category.ID
+        let userID: User.ID?
+        let totalPrice: Int
+        let isFavorite: Bool
+        let isRequirementsSatisfied: Bool
     }
     
     struct ItemResponseData: Content {
@@ -185,4 +216,8 @@ private extension ConstructedItemController {
         let categoryItemID: CategoryItem.ID?
         let name: String
     }
+}
+
+enum ConstructedItemControllerError: Error {
+    case minimumItemsRequirementNotSatisfied
 }
