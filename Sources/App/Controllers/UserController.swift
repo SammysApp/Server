@@ -37,6 +37,16 @@ final class UserController {
         }.flatMap { try $0.outstandingOrders.query(on: req).all() }
     }
     
+    private func getCards(_ req: Request) throws -> Future<[CardResponseData]> {
+        return try verifier.verify(req).flatMap { uid in
+            try req.parameters.next(User.self)
+                .guard({ $0.uid == uid }, else: Abort(.unauthorized))
+        }.flatMap { user in
+            try self.squareAPIManager.retrieveCustomer(id: user.customerID, client: req.client())
+                .map { $0.cards.map(self.makeCardResponseData) }
+        }
+    }
+    
     // MARK: - POST
     private func create(_ req: Request, data: CreateUserRequestData) throws -> Future<User> {
         return try verifier.verify(req).flatMap { uid in
@@ -61,10 +71,9 @@ final class UserController {
                 data: .init(cardNonce: data.cardNonce),
                 client: req.client()
             )
-        }.map { CardResponseData(id: $0.id) }
+        }.map(makeCardResponseData)
     }
     
-    // TODO: Only allow one purchased order for outstanding.
     private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderRequestData) throws -> Future<PurchasedOrder> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
@@ -102,19 +111,6 @@ final class UserController {
         }
     }
     
-    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
-        return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
-            PurchasedOrder(
-                userID: userID,
-                transactionID: transaction.id,
-                totalPrice: totalPrice,
-                purchasedDate: Date(),
-                preparedForDate: outstandingOrder.preparedForDate,
-                note: outstandingOrder.note
-            )
-        }
-    }
-    
     private func createAndAttachPurchasedConstructedItems(from outstandingOrder: OutstandingOrder, to purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<Void> {
         return try outstandingOrder.constructedItems.query(on: conn).alsoDecode(OutstandingOrderConstructedItem.self).all()
             .flatMap { result in
@@ -123,17 +119,6 @@ final class UserController {
                         .flatMap { try self.attachCategoryItems(from: constructedItem, to: $0, conn: conn) }
                 }.flatten(on: conn)
             }
-    }
-    
-    private func makePurchasedConstructedItem(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<PurchasedConstructedItem> {
-        return try constructedItem.totalPrice(on: conn).map { totalPrice in
-            try PurchasedConstructedItem(
-                orderID: purchasedOrder.requireID(),
-                constructedItemID: constructedItem.requireID(),
-                quantity: outstandingOrderConstructedItem.quantity,
-                totalPrice: totalPrice * outstandingOrderConstructedItem.quantity
-            )
-        }
     }
     
     private func attachCategoryItems(from constructedItem: ConstructedItem, to purchasedConstructedItem: PurchasedConstructedItem, conn: DatabaseConnectable) throws -> Future<Void> {
@@ -157,6 +142,34 @@ final class UserController {
                 userID: constructedItem.userID,
                 totalPrice: totalPrice,
                 isFavorite: constructedItem.isFavorite
+            )
+        }
+    }
+    
+    private func makeCardResponseData(card: SquareCard) -> CardResponseData {
+        return CardResponseData(id: card.id)
+    }
+    
+    private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
+        return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
+            PurchasedOrder(
+                userID: userID,
+                transactionID: transaction.id,
+                totalPrice: totalPrice,
+                purchasedDate: Date(),
+                preparedForDate: outstandingOrder.preparedForDate,
+                note: outstandingOrder.note
+            )
+        }
+    }
+    
+    private func makePurchasedConstructedItem(constructedItem: ConstructedItem, outstandingOrderConstructedItem: OutstandingOrderConstructedItem, purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<PurchasedConstructedItem> {
+        return try constructedItem.totalPrice(on: conn).map { totalPrice in
+            try PurchasedConstructedItem(
+                orderID: purchasedOrder.requireID(),
+                constructedItemID: constructedItem.requireID(),
+                quantity: outstandingOrderConstructedItem.quantity,
+                totalPrice: totalPrice * outstandingOrderConstructedItem.quantity
             )
         }
     }
