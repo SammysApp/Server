@@ -6,8 +6,8 @@ final class CategoryController {
     // MARK: - GET
     private func get(_ req: Request) -> Future<[CategoryResponseData]> {
         var databaseQuery = Category.query(on: req)
-        if let requestQuery = try? req.query.decode(GetCategoriesQueryData.self) {
-            if let isRoot = requestQuery.isRoot, isRoot {
+        if let reqQuery = try? req.query.decode(GetCategoriesRequestQueryData.self) {
+            if let isRoot = reqQuery.isRoot, isRoot {
                 databaseQuery = databaseQuery.filter(\.parentCategoryID == nil)
             }
         }
@@ -51,6 +51,8 @@ final class CategoryController {
                         parentCategoryID: category.parentCategoryID,
                         name: category.name,
                         imageURL: category.imageURL,
+                        minimumItems: category.minimumItems,
+                        maximumItems: category.maximumItems,
                         isParentCategory: isParentCategory,
                         isConstructable: category.isConstructable
                     )
@@ -97,7 +99,7 @@ extension CategoryController: RouteCollection {
 }
 
 private extension CategoryController {
-    struct GetCategoriesQueryData: Codable {
+    struct GetCategoriesRequestQueryData: Codable {
         let isRoot: Bool?
     }
 }
@@ -108,6 +110,8 @@ private extension CategoryController {
         var parentCategoryID: Category.ID?
         var name: String
         var imageURL: String?
+        var minimumItems: Int?
+        var maximumItems: Int?
         var isParentCategory: Bool
         var isConstructable: Bool
     }

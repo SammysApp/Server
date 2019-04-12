@@ -18,8 +18,8 @@ final class StoreHoursController {
     // MARK: - GET
     private func get(_ req: Request) -> Future<StoreDateHoursResponseData> {
         var date = Date()
-        if let requestQuery = try? req.query.decode(GetStoreHoursQueryData.self) {
-            if let queryDateString = requestQuery.date,
+        if let reqQuery = try? req.query.decode(GetStoreHoursRequestQueryData.self) {
+            if let queryDateString = reqQuery.date,
                 let queryDate = queryDateFormatter.date(from: queryDateString) {
                 date = queryDate
             }
@@ -60,7 +60,7 @@ extension StoreHoursController: RouteCollection {
 }
 
 private extension StoreHoursController {
-    struct GetStoreHoursQueryData: Content {
+    struct GetStoreHoursRequestQueryData: Content {
         /// Date in `M/d/yyyy` format.
         let date: String?
     }

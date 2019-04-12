@@ -83,8 +83,8 @@ final class UserController {
     // MARK: - Helper Methods
     private func queryConstructedItems(user: User, req: Request) throws -> Future<[ConstructedItem]> {
         var databaseQuery = try user.constructedItems.query(on: req)
-        if let requestQuery = try? req.query.decode(GetConstructedItemsQueryData.self) {
-            if let isFavorite = requestQuery.isFavorite {
+        if let reqQuery = try? req.query.decode(GetConstructedItemsRequestQueryData.self) {
+            if let isFavorite = reqQuery.isFavorite {
                 databaseQuery = databaseQuery.filter(\.isFavorite == isFavorite)
             }
         }
@@ -185,7 +185,7 @@ extension UserController: RouteCollection {
 }
 
 private extension UserController {
-    struct GetConstructedItemsQueryData: Codable {
+    struct GetConstructedItemsRequestQueryData: Codable {
         let isFavorite: Bool?
     }
 }

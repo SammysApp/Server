@@ -12,6 +12,19 @@ final class ConstructedItemController {
             .flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
+    private func getItems(_ req: Request) throws -> Future<[ItemResponseData]> {
+        return try req.parameters.next(ConstructedItem.self)
+            .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem -> Future<[(CategoryItem, Item)]> in
+                var query = try constructedItem.categoryItems.query(on: req)
+                if let reqQuery = try? req.query.decode(GetItemsQueryRequestData.self) {
+                    if let categoryID = reqQuery.categoryID {
+                        query = query.filter(\.categoryID == categoryID)
+                    }
+                }
+                return query.join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self).all()
+            }.map(makeItemResponseDataArray)
+    }
+    
     // MARK: - POST
     private func create(_ req: Request, data: CreateConstructedItemRequestData) throws -> Future<ConstructedItemResponseData> {
         return try verified(data, req: req)
@@ -79,6 +92,18 @@ final class ConstructedItemController {
         }
     }
     
+    private func makeItemResponseDataArray(categoryItemItemPairs: [(CategoryItem, Item)]) throws -> [ItemResponseData] {
+        return try categoryItemItemPairs.map(makeItemResponseData)
+    }
+    
+    private func makeItemResponseData(categoryItem: CategoryItem, item: Item) throws -> ItemResponseData {
+        return try ItemResponseData(
+            id: item.requireID(),
+            categoryItemID: categoryItem.requireID(),
+            name: item.name
+        )
+    }
+    
     private func verified(_ constructedItem: ConstructedItem, req: Request) throws -> Future<ConstructedItem> {
         guard let userID = constructedItem.userID else { return req.future(constructedItem) }
         return try verify(userID, req: req).transform(to: constructedItem)
@@ -103,6 +128,8 @@ extension ConstructedItemController: RouteCollection {
         
         // GET /constructedItems/:constructedItem
         constructedItemsRouter.get(ConstructedItem.parameter, use: getOne)
+        // GET /constructedItems/:constructedItem/items
+        constructedItemsRouter.get(ConstructedItem.parameter, "items", use: getItems)
         
         // POST /constructedItems
         constructedItemsRouter.post(CreateConstructedItemRequestData.self, use: create)
@@ -117,6 +144,12 @@ extension ConstructedItemController: RouteCollection {
         
         // DELETE /constructedItems/:constructedItem/items/:categoryItem
         constructedItemsRouter.delete(ConstructedItem.parameter, "items", CategoryItem.parameter, use: detachCategoryItem)
+    }
+}
+
+private extension ConstructedItemController {
+    struct GetItemsQueryRequestData: Content {
+        let categoryID: Category.ID?
     }
 }
 
@@ -145,5 +178,11 @@ private extension ConstructedItemController {
         var userID: User.ID?
         var totalPrice: Int
         var isFavorite: Bool
+    }
+    
+    struct ItemResponseData: Content {
+        let id: Item.ID
+        let categoryItemID: CategoryItem.ID?
+        let name: String
     }
 }

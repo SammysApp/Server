@@ -6,6 +6,8 @@ final class Category: PostgreSQLUUIDModel {
     var parentCategoryID: Category.ID?
     var name: String
     var imageURL: String?
+    var minimumItems: Int?
+    var maximumItems: Int?
     var isConstructable: Bool
     var availability: Availability
     
@@ -13,12 +15,16 @@ final class Category: PostgreSQLUUIDModel {
          parentCategoryID: Category.ID? = nil,
          name: String,
          imageURL: String? = nil,
+         minimumItems: Int? = nil,
+         maximumItems: Int? = nil,
          isConstructable: Bool = false,
          availability: Availability = .isAvailable) {
         self.id = id
         self.parentCategoryID = parentCategoryID
         self.name = name
         self.imageURL = imageURL
+        self.minimumItems = minimumItems
+        self.maximumItems = maximumItems
         self.isConstructable = isConstructable
         self.availability = availability
     }

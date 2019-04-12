@@ -12,6 +12,8 @@
           {
             "id": "477d3904-7ad5-4e1f-a919-449cd000229a",
             "name": "Size",
+            "minimumItems": 1,
+            "maximumItems": 1,
             "items": [
               "36b15e05-d7a6-4893-8335-4443f1f662e1",
               "ae6af970-ef15-4234-a629-4afd0977e7bf",
@@ -23,6 +25,7 @@
           {
             "id": "91ad7b14-527d-4c2f-b8f0-2d3d2d4d086f",
             "name": "Lettuce",
+            "minimumItems": 1,
             "items": [
               "60c26ab1-df95-4ae9-a64d-e489d67a03c7",
               "a07350ac-11e0-45ec-b40f-f87c690e1e59",
@@ -121,6 +124,7 @@
           {
             "id": "8cc1800b-f97e-4a17-a83a-2d8904837a5e",
             "name": "Dressings",
+            "maximumItems": 2,
             "items": [
               "fd0a9b6b-b913-4cbc-a181-233efdbfa1a0",
               "b5b0256a-0764-456b-8daf-9c250422f30b",

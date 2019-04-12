@@ -75,6 +75,8 @@ struct AddDefaultData {
             parentCategoryID: parentCategoryID,
             name: categoryData.name,
             imageURL: categoryData.imageURL,
+            minimumItems: categoryData.minimumItems,
+            maximumItems: categoryData.maximumItems,
             isConstructable: categoryData.isConstructable ?? false
         )
     }
@@ -166,10 +168,12 @@ private extension AddDefaultData {
     struct CategoryData: Codable {
         let id: Category.ID
         let name: String
-        let isConstructable: Bool?
         let imageURL: String?
-        let items: [Item.ID]?
+        let minimumItems: Int?
+        let maximumItems: Int?
+        let isConstructable: Bool?
         let subcategories: [CategoryData]?
+        let items: [Item.ID]?
     }
     
     struct ItemData: Codable {
