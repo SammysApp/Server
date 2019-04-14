@@ -22,8 +22,8 @@ struct SquareAPIManager {
             .map { $0.customer }
     }
     
-    func createCustomerCard(customerID: SquareCustomer.ID, data: CreateCustomerCardRequestData, client: Client) -> Future<SquareCard> {
-        let endpoint = Endpoints.createCustomerCard(customerID)
+    func createCustomerCard(id: SquareCustomer.ID, data: CreateCustomerCardRequestData, client: Client) -> Future<SquareCard> {
+        let endpoint = Endpoints.createCustomerCard(id)
         return client.send(endpoint, headers: makeHeaders(endpoint)) {
             try $0.content.encode(data, using: self.dataEncoder)
         }.flatMap { try $0.content.decode(CreateCustomerCardResponseData.self) }

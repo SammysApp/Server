@@ -43,7 +43,7 @@ final class UserController {
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
         }.flatMap { user in
             try self.squareAPIManager.retrieveCustomer(id: user.customerID, client: req.client())
-                .map { $0.cards.map(self.makeCardResponseData) }
+                .map { $0.cards?.map(self.makeCardResponseData) ?? [] }
         }
     }
     
@@ -67,7 +67,7 @@ final class UserController {
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
         }.flatMap { user in
             try self.squareAPIManager.createCustomerCard(
-                customerID: user.customerID,
+                id: user.customerID,
                 data: .init(cardNonce: data.cardNonce),
                 client: req.client()
             )
@@ -147,7 +147,10 @@ final class UserController {
     }
     
     private func makeCardResponseData(card: SquareCard) -> CardResponseData {
-        return CardResponseData(id: card.id)
+        return CardResponseData(
+            id: card.id,
+            name: card.cardBrand.name + " " + card.last4
+        )
     }
     
     private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
@@ -234,5 +237,6 @@ private extension UserController {
     
     struct CardResponseData: Content {
         let id: SquareCard.ID
+        let name: String
     }
 }
