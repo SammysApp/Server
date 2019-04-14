@@ -187,6 +187,8 @@ extension UserController: RouteCollection {
         usersRouter.get(User.parameter, "constructedItems", use: getConstructedItems)
         // GET /users/:user/outstandingOrders
         usersRouter.get(User.parameter, "outstandingOrders", use: getOutstandingOrders)
+        // GET /users/:user/cards
+        usersRouter.get(User.parameter, "cards", use: getCards)
         
         // POST /users
         usersRouter.post(CreateUserRequestData.self, use: create)
