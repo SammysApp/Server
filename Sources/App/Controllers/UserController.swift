@@ -68,7 +68,10 @@ final class UserController {
         }.flatMap { user in
             try self.squareAPIManager.createCustomerCard(
                 id: user.customerID,
-                data: .init(cardNonce: data.cardNonce),
+                data: .init(
+                    cardNonce: data.cardNonce,
+                    billingAddress: .init(postalCode: data.postalCode)
+                ),
                 client: req.client()
             )
         }.map(makeCardResponseData)
@@ -217,6 +220,7 @@ private extension UserController {
     
     struct CreateCardRequestData: Content {
         let cardNonce: String
+        let postalCode: String
     }
     
     struct CreatePurchasedOrderRequestData: Content {

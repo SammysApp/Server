@@ -7,10 +7,16 @@ struct SquareAPIManager {
         return encoder
     }()
     
+    private var dataDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }()
+    
     func retrieveCustomer(id: SquareCustomer.ID, client: Client) -> Future<SquareCustomer> {
         let endpoint = Endpoints.retrieveCustomer(id)
         return client.send(endpoint, headers: makeHeaders(endpoint))
-            .flatMap { try $0.content.decode(RetrieveCustomerResponseData.self) }
+            .flatMap { try $0.content.decode(RetrieveCustomerResponseData.self, using: self.dataDecoder) }
             .map { $0.customer }
     }
     
@@ -18,7 +24,7 @@ struct SquareAPIManager {
         let endpoint = Endpoints.createCustomer
         return client.send(endpoint, headers: makeHeaders(endpoint)) {
             try $0.content.encode(data, using: self.dataEncoder)
-        }.flatMap { try $0.content.decode(CreateCustomerResponseData.self) }
+        }.flatMap { try $0.content.decode(CreateCustomerResponseData.self, using: self.dataDecoder) }
             .map { $0.customer }
     }
     
@@ -26,7 +32,7 @@ struct SquareAPIManager {
         let endpoint = Endpoints.createCustomerCard(id)
         return client.send(endpoint, headers: makeHeaders(endpoint)) {
             try $0.content.encode(data, using: self.dataEncoder)
-        }.flatMap { try $0.content.decode(CreateCustomerCardResponseData.self) }
+        }.flatMap { try $0.content.decode(CreateCustomerCardResponseData.self, using: self.dataDecoder) }
             .map { $0.card }
     }
     
@@ -34,7 +40,8 @@ struct SquareAPIManager {
         let endpoint = Endpoints.charge(locationID)
         return client.send(endpoint, headers: makeHeaders(endpoint)) {
             try $0.content.encode(data, using: self.dataEncoder)
-        }.flatMap { try $0.content.decode(ChargeResponseData.self) }.map { $0.transaction }
+        }.flatMap { try $0.content.decode(ChargeResponseData.self, using: self.dataDecoder) }
+            .map { $0.transaction }
     }
     
     private func makeHeaders(_ endpoint: HTTPEndpoint) -> [HTTPHeader] {
@@ -85,7 +92,7 @@ private extension SquareAPIManager {
 }
 
 extension SquareAPIManager {
-    struct RetrieveCustomerResponseData: Content {
+    private struct RetrieveCustomerResponseData: Content {
         let customer: SquareCustomer
     }
 }
@@ -105,6 +112,7 @@ extension SquareAPIManager {
 extension SquareAPIManager {
     struct CreateCustomerCardRequestData: Content {
         let cardNonce: String
+        let billingAddress: SquareAddress
     }
     
     private struct CreateCustomerCardResponseData: Codable {
