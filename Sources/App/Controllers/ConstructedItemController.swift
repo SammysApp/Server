@@ -99,7 +99,7 @@ final class ConstructedItemController {
                     if let minimumItems = category.minimumItems {
                         return try constructedItem.categoryItems.query(on: conn)
                             .filter(\.categoryID == category.requireID()).count()
-                            .guard({ $0 == minimumItems }, else: ConstructedItemControllerError.minimumItemsRequirementNotSatisfied)
+                            .guard({ $0 >= minimumItems }, else: ConstructedItemControllerError.minimumItemsRequirementNotSatisfied)
                             .transform(to: ())
                     } else { return conn.future() }
                 }.flatten(on: conn)
