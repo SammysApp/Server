@@ -53,6 +53,12 @@ extension PurchasedOrder: Migration {
 }
 
 extension PurchasedOrder {
+    var user: Parent<PurchasedOrder, User> {
+        return parent(\.userID)
+    }
+}
+
+extension PurchasedOrder {
     var constructedItems: Children<PurchasedOrder, PurchasedConstructedItem> {
         return children(\.orderID)
     }

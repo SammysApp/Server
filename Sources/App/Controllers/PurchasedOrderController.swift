@@ -3,8 +3,10 @@ import Fluent
 import FluentPostgreSQL
 
 final class PurchasedOrderController {
-    private func get(_ req: Request) -> Future<[PurchasedOrder]> {
-        return PurchasedOrder.query(on: req).all()
+    private func get(_ req: Request) -> Future<[PurchasedOrderResponseData]> {
+        return PurchasedOrder.query(on: req)
+            .join(\User.id, to: \PurchasedOrder.userID).alsoDecode(User.self).all()
+            .map { try $0.map(self.makePurchasedOrderResponseData) }
     }
     
     private func getConstructedItems(_ req: Request) throws -> Future<[PurchasedConstructedItem]> {
@@ -22,6 +24,13 @@ final class PurchasedOrderController {
     }
     
     // MARK: - Helper Methods
+    private func makePurchasedOrderResponseData(purchasedOrder: PurchasedOrder, user: User) throws -> PurchasedOrderResponseData {
+        return try PurchasedOrderResponseData(
+            id: purchasedOrder.requireID(),
+            user: user
+        )
+    }
+    
     private func makeCategoryResponseData(category: Category) throws -> CategoryResponseData {
         return try CategoryResponseData(
             id: category.requireID(),
@@ -68,6 +77,11 @@ extension PurchasedOrderController: RouteCollection {
 }
 
 private extension PurchasedOrderController {
+    struct PurchasedOrderResponseData: Content {
+        let id: PurchasedOrder.ID
+        let user: User
+    }
+    
     struct CategoryResponseData: Content {
         let id: Category.ID
         let name: String
