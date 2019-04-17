@@ -26,13 +26,13 @@ extension PurchasedConstructedItem: Content {}
 extension PurchasedConstructedItem: Migration {}
 
 extension PurchasedConstructedItem {
-    var order: Parent<PurchasedConstructedItem, PurchasedOrder>? {
+    var order: Parent<PurchasedConstructedItem, PurchasedOrder> {
         return parent(\.orderID)
     }
 }
 
 extension PurchasedConstructedItem {
-    var constructedItem: Parent<PurchasedConstructedItem, ConstructedItem>? {
+    var constructedItem: Parent<PurchasedConstructedItem, ConstructedItem> {
         return parent(\.constructedItemID)
     }
 }
