@@ -23,11 +23,17 @@ final class PurchasedOrderController {
     
     // MARK: - Helper Methods
     private func makeCategoryResponseData(category: Category) throws -> CategoryResponseData {
-        return try CategoryResponseData(id: category.requireID())
+        return try CategoryResponseData(
+            id: category.requireID(),
+            name: category.name
+        )
     }
     
     private func makeItemResponseData(categoryItem: CategoryItem, item: Item) throws -> ItemResponseData {
-        return try ItemResponseData(id: item.requireID())
+        return try ItemResponseData(
+            id: item.requireID(),
+            name: item.name
+        )
     }
     
     private func makeCategorizedItemsResponseData(purchasedConstructedItem: PurchasedConstructedItem, conn: DatabaseConnectable) -> Future<[CategorizedItemsResponseData]> {
@@ -64,10 +70,12 @@ extension PurchasedOrderController: RouteCollection {
 private extension PurchasedOrderController {
     struct CategoryResponseData: Content {
         let id: Category.ID
+        let name: String
     }
     
     struct ItemResponseData: Content {
         let id: Item.ID
+        let name: String
     }
     
     struct CategorizedItemsResponseData: Content {
