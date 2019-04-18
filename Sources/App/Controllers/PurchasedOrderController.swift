@@ -33,10 +33,12 @@ final class PurchasedOrderController {
             .map { try $0.map(self.makePurchasedOrderResponseData) }
     }
     
-    private func getConstructedItems(_ req: Request) throws -> Future<[PurchasedConstructedItem]> {
-        return try req.parameters.next(PurchasedOrder.self).flatMap { purchasedOrder in
-            try purchasedOrder.constructedItems.query(on: req).all()
-        }
+    private func getConstructedItems(_ req: Request) throws -> Future<[PurchasedConstructedItemResponseData]> {
+        return try req.parameters.next(PurchasedOrder.self)
+            .flatMap {  try $0.constructedItems.query(on: req).all() }
+            .flatMap { purchasedConstructedItems in
+                purchasedConstructedItems.map { self.makePurchasedConstructedItemResponseData(purchasedConstructedItem: $0, conn: req) }.flatten(on: req)
+            }
     }
     
     private func getConstructedItemItems(_ req: Request) throws -> Future<[CategorizedItemsResponseData]> {
@@ -53,6 +55,19 @@ final class PurchasedOrderController {
             id: purchasedOrder.requireID(),
             user: user
         )
+    }
+    
+    private func makePurchasedConstructedItemResponseData(purchasedConstructedItem: PurchasedConstructedItem, conn: DatabaseConnectable) -> Future<PurchasedConstructedItemResponseData> {
+        return purchasedConstructedItem.constructedItem.query(on: conn)
+            .first().unwrap(or: Abort(.internalServerError))
+            .flatMap { $0.category.query(on: conn)
+                .first().unwrap(or: Abort(.internalServerError)) }.map { category in
+                try PurchasedConstructedItemResponseData(
+                    id: purchasedConstructedItem.requireID(),
+                    name: category.name,
+                    quantity: purchasedConstructedItem.quantity
+                )
+            }
     }
     
     private func makeCategoryResponseData(category: Category) throws -> CategoryResponseData {
@@ -111,6 +126,12 @@ private extension PurchasedOrderController {
     struct PurchasedOrderResponseData: Content {
         let id: PurchasedOrder.ID
         let user: User
+    }
+    
+    struct PurchasedConstructedItemResponseData: Content {
+        let id: PurchasedConstructedItem.ID
+        let name: String
+        let quantity: Int
     }
     
     struct CategoryResponseData: Content {
