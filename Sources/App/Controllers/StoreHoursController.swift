@@ -12,7 +12,7 @@ final class StoreHoursController {
     }()
     
     private struct Constants {
-        static let queryDateFormat = "M/d/yyyy"
+        static let queryDateFormat = "M-d-yyyy"
     }
     
     // MARK: - GET
@@ -61,7 +61,7 @@ extension StoreHoursController: RouteCollection {
 
 private extension StoreHoursController {
     struct GetStoreHoursRequestQueryData: Content {
-        /// Date in `M/d/yyyy` format.
+        /// Date in `M-d-yyyy` format.
         let date: String?
     }
 }

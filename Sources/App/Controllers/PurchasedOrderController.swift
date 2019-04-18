@@ -3,8 +3,32 @@ import Fluent
 import FluentPostgreSQL
 
 final class PurchasedOrderController {
-    private func get(_ req: Request) -> Future<[PurchasedOrderResponseData]> {
+    let calendar = Calendar(identifier: .gregorian)
+    
+    let queryDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = Constants.queryDateFormat
+        return formatter
+    }()
+    
+    private struct Constants {
+        static let queryDateFormat = "M-d-yyyy"
+    }
+    
+    private func get(_ req: Request) throws -> Future<[PurchasedOrderResponseData]> {
+        guard var startDate = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: Date())
+            else { throw Abort(.internalServerError) }
+        if let reqQuery = try? req.query.decode(GetPurchasedOrdersRequestQueryData.self) {
+            if let queryDateString = reqQuery.date,
+                let queryStartDate = queryDateFormatter.date(from: queryDateString) {
+                startDate = queryStartDate
+            }
+        }
+        guard let endDateNotIncluding = calendar.date(byAdding: .day, value: 1, to: startDate)
+            else { throw Abort(.internalServerError) }
         return PurchasedOrder.query(on: req)
+            .filter(\.purchasedDate >= startDate)
+            .filter(\.purchasedDate < endDateNotIncluding)
             .join(\User.id, to: \PurchasedOrder.userID).alsoDecode(User.self).all()
             .map { try $0.map(self.makePurchasedOrderResponseData) }
     }
@@ -73,6 +97,13 @@ extension PurchasedOrderController: RouteCollection {
         purchasedOrdersRouter.get(PurchasedOrder.parameter, "constructedItems", use: getConstructedItems)
         // GET /purchasedOrders/:purchasedOrder/constructedItems/:constructedItem/items
         purchasedOrdersRouter.get(PurchasedOrder.parameter, "constructedItems", PurchasedConstructedItem.parameter, "items", use: getConstructedItemItems)
+    }
+}
+
+private extension PurchasedOrderController {
+    struct GetPurchasedOrdersRequestQueryData: Content {
+        /// Date in `M-d-yyyy` format.
+        let date: String?
     }
 }
 
