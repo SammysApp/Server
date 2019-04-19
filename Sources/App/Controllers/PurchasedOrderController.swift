@@ -15,6 +15,7 @@ final class PurchasedOrderController {
         static let queryDateFormat = "M-d-yyyy"
     }
     
+    // MARK: - GET
     private func get(_ req: Request) throws -> Future<[PurchasedOrderResponseData]> {
         guard var startDate = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: Date())
             else { throw Abort(.internalServerError) }
@@ -33,6 +34,11 @@ final class PurchasedOrderController {
             .map { try $0.map(self.makePurchasedOrderResponseData) }
     }
     
+    private func getOne(_ req: Request) throws -> Future<PurchasedOrderResponseData> {
+        return try req.parameters.next(PurchasedOrder.self)
+            .flatMap { try self.makePurchasedOrderResponseData(purchasedOrder: $0, conn: req) }
+    }
+    
     private func getConstructedItems(_ req: Request) throws -> Future<[PurchasedConstructedItemResponseData]> {
         return try req.parameters.next(PurchasedOrder.self)
             .flatMap {  try $0.constructedItems.query(on: req).all() }
@@ -49,10 +55,26 @@ final class PurchasedOrderController {
             }
     }
     
+    // MARK: - PATCH
+    private func partiallyUpdate(_ req: Request, data: PartialUpdateRequestData) throws -> Future<PurchasedOrderResponseData> {
+        return try req.parameters.next(PurchasedOrder.self).flatMap { purchasedOrder -> Future<PurchasedOrder> in
+            if let progress = data.progress {
+                purchasedOrder.progress = progress
+            }
+            return purchasedOrder.update(on: req)
+        }.flatMap { try self.makePurchasedOrderResponseData(purchasedOrder: $0, conn: req) }
+    }
+    
     // MARK: - Helper Methods
+    private func makePurchasedOrderResponseData(purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<PurchasedOrderResponseData> {
+        return purchasedOrder.user.get(on: conn)
+            .map { try self.makePurchasedOrderResponseData(purchasedOrder: purchasedOrder, user: $0) }
+    }
+    
     private func makePurchasedOrderResponseData(purchasedOrder: PurchasedOrder, user: User) throws -> PurchasedOrderResponseData {
         return try PurchasedOrderResponseData(
             id: purchasedOrder.requireID(),
+            progress: purchasedOrder.progress,
             user: user
         )
     }
@@ -108,10 +130,15 @@ extension PurchasedOrderController: RouteCollection {
         
         // GET /purchasedOrders
         purchasedOrdersRouter.get(use: get)
+        // GET /purchasedOrders/:purchasedOrder
+        purchasedOrdersRouter.get(PurchasedOrder.parameter, use: getOne)
         // GET /purchasedOrders/:purchasedOrder/constructedItems
         purchasedOrdersRouter.get(PurchasedOrder.parameter, "constructedItems", use: getConstructedItems)
         // GET /purchasedOrders/:purchasedOrder/constructedItems/:constructedItem/items
         purchasedOrdersRouter.get(PurchasedOrder.parameter, "constructedItems", PurchasedConstructedItem.parameter, "items", use: getConstructedItemItems)
+        
+        // PATCH /purchasedOrders/:purchasedOrder
+        purchasedOrdersRouter.patch(PartialUpdateRequestData.self, at: PurchasedOrder.parameter, use: partiallyUpdate)
     }
 }
 
@@ -123,8 +150,15 @@ private extension PurchasedOrderController {
 }
 
 private extension PurchasedOrderController {
+    struct PartialUpdateRequestData: Content {
+        let progress: OrderProgress?
+    }
+}
+
+private extension PurchasedOrderController {
     struct PurchasedOrderResponseData: Content {
         let id: PurchasedOrder.ID
+        let progress: OrderProgress
         let user: User
     }
     

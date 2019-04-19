@@ -53,7 +53,7 @@ final class ConstructedItemController {
     }
     
     // MARK: - PATCH
-    private func partiallyUpdateConstructedItem(_ req: Request, data: PartialConstructedItemUpdateRequestData) throws -> Future<ConstructedItemResponseData> {
+    private func partiallyUpdate(_ req: Request, data: PartialUpdateRequestData) throws -> Future<ConstructedItemResponseData> {
         return try req.parameters.next(ConstructedItem.self).flatMap { constructedItem in
             if let userID = data.userID {
                 // Only allow update to `userID` if the current value is `nil` or the same.
@@ -170,7 +170,7 @@ extension ConstructedItemController: RouteCollection {
         constructedItemsRouter.put(ConstructedItem.self, at: ConstructedItem.parameter, use: update)
         
         // PATCH /constructedItems/:constructedItem
-        constructedItemsRouter.patch(PartialConstructedItemUpdateRequestData.self, at: ConstructedItem.parameter, use: partiallyUpdateConstructedItem)
+        constructedItemsRouter.patch(PartialUpdateRequestData.self, at: ConstructedItem.parameter, use: partiallyUpdate)
         
         // DELETE /constructedItems/:constructedItem/items/:categoryItem
         constructedItemsRouter.delete(ConstructedItem.parameter, "items", CategoryItem.parameter, use: detachCategoryItem)
@@ -195,7 +195,7 @@ private extension ConstructedItemController {
 }
 
 private extension ConstructedItemController {
-    struct PartialConstructedItemUpdateRequestData: Content {
+    struct PartialUpdateRequestData: Content {
         let userID: User.ID?
         let isFavorite: Bool?
     }
