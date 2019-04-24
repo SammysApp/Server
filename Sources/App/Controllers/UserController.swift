@@ -6,6 +6,12 @@ final class UserController {
     private let verifier = UserRequestVerifier()
     private let squareAPIManager = SquareAPIManager()
     
+    private lazy var dataEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        if #available(OSX 10.12, *) { encoder.dateEncodingStrategy = .iso8601 }
+        return encoder
+    }()
+    
     // MARK: - GET
     private func getOne(_ req: Request) throws -> Future<User> {
         return try verifier.verify(req).flatMap { uid in
@@ -77,7 +83,7 @@ final class UserController {
         }.map(makeCardResponseData)
     }
     
-    private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderRequestData) throws -> Future<PurchasedOrder> {
+    private func createPurchasedOrder(_ req: Request, data: CreatePurchasedOrderRequestData) throws -> Future<PurchasedOrderResponseData> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
                 .guard({ $0.uid == uid }, else: Abort(.unauthorized))
@@ -88,7 +94,8 @@ final class UserController {
                 return try self.charge(user: user, outstandingOrder: outstandingOrder, cardNonce: data.cardNonce, customerCardID: data.customerCardID, req: req)
                     .flatMap { try self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: user.requireID(), transaction: $0, conn: req).create(on: req) }
                     .flatMap { try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: $0, conn: req).transform(to: $0) }
-                    .do { do { try OrderSessionController.default.send($0) } catch { print(error.localizedDescription) } }
+                    .flatMap { try self.makePurchasedOrderResponseData(purchasedOrder: $0, conn: req) }
+                    .do { do { try SessionController.default.send(self.dataEncoder.encode($0)) } catch { print(error.localizedDescription) } }
             }
     }
     
@@ -137,25 +144,6 @@ final class UserController {
             }
     }
     
-    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
-        return try constructedItem.totalPrice(on: conn).map { totalPrice in
-            return try ConstructedItemResponseData(
-                id: constructedItem.requireID(),
-                categoryID: constructedItem.categoryID,
-                userID: constructedItem.userID,
-                totalPrice: totalPrice,
-                isFavorite: constructedItem.isFavorite
-            )
-        }
-    }
-    
-    private func makeCardResponseData(card: SquareCard) -> CardResponseData {
-        return CardResponseData(
-            id: card.id,
-            name: card.cardBrand.name + " " + card.last4
-        )
-    }
-    
     private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
         return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
             PurchasedOrder(
@@ -176,6 +164,35 @@ final class UserController {
                 constructedItemID: constructedItem.requireID(),
                 quantity: outstandingOrderConstructedItem.quantity,
                 totalPrice: totalPrice * outstandingOrderConstructedItem.quantity
+            )
+        }
+    }
+    
+    private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
+        return try constructedItem.totalPrice(on: conn).map { totalPrice in
+            return try ConstructedItemResponseData(
+                id: constructedItem.requireID(),
+                categoryID: constructedItem.categoryID,
+                userID: constructedItem.userID,
+                totalPrice: totalPrice,
+                isFavorite: constructedItem.isFavorite
+            )
+        }
+    }
+    
+    private func makeCardResponseData(card: SquareCard) -> CardResponseData {
+        return CardResponseData(
+            id: card.id,
+            name: card.cardBrand.name + " " + card.last4
+        )
+    }
+    
+    private func makePurchasedOrderResponseData(purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<PurchasedOrderResponseData> {
+        return purchasedOrder.user.get(on: conn).map { user in
+            try PurchasedOrderResponseData(
+                id: purchasedOrder.requireID(),
+                progress: purchasedOrder.progress,
+                user: user
             )
         }
     }
@@ -242,5 +259,11 @@ private extension UserController {
     struct CardResponseData: Content {
         let id: SquareCard.ID
         let name: String
+    }
+    
+    struct PurchasedOrderResponseData: Content {
+        let id: PurchasedOrder.ID
+        let progress: OrderProgress
+        let user: User
     }
 }

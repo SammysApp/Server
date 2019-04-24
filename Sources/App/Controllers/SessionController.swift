@@ -1,14 +1,13 @@
 import Vapor
 
-final class OrderSessionController {
-    static var `default` = OrderSessionController()
+final class SessionController {
+    static var `default` = SessionController()
     
     private var sessions = [SocketSession]()
     
     private init() {}
     
-    func send(_ order: PurchasedOrder) throws {
-        let data = try JSONEncoder().encode(order)
+    func send(_ data: Data) throws {
         sessions.map { $0.socket }.forEach { $0.send(data) }
     }
     
