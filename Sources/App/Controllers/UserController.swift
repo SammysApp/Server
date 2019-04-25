@@ -191,6 +191,9 @@ final class UserController {
         return purchasedOrder.user.get(on: conn).map { user in
             try PurchasedOrderResponseData(
                 id: purchasedOrder.requireID(),
+                number: purchasedOrder.number,
+                purchasedDate: purchasedOrder.purchasedDate,
+                preparedForDate: purchasedOrder.preparedForDate,
                 progress: purchasedOrder.progress,
                 user: user
             )
@@ -263,6 +266,9 @@ private extension UserController {
     
     struct PurchasedOrderResponseData: Content {
         let id: PurchasedOrder.ID
+        let number: Int?
+        let purchasedDate: Date
+        let preparedForDate: Date?
         let progress: OrderProgress
         let user: User
     }
