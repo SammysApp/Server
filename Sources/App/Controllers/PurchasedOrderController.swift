@@ -74,6 +74,7 @@ final class PurchasedOrderController {
     private func makePurchasedOrderResponseData(purchasedOrder: PurchasedOrder, user: User) throws -> PurchasedOrderResponseData {
         return try PurchasedOrderResponseData(
             id: purchasedOrder.requireID(),
+            preparedForDate: purchasedOrder.preparedForDate,
             progress: purchasedOrder.progress,
             user: user
         )
@@ -158,6 +159,7 @@ private extension PurchasedOrderController {
 private extension PurchasedOrderController {
     struct PurchasedOrderResponseData: Content {
         let id: PurchasedOrder.ID
+        let preparedForDate: Date?
         let progress: OrderProgress
         let user: User
     }
