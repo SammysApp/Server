@@ -29,16 +29,16 @@ private struct AuthTimeClaim: JWTUnixEpochClaim {
 
 private extension JWTUnixEpochClaim {
     func verify(isBefore date: Date = .init(), or error: JWTError? = nil) throws {
-        switch value.compare(date) {
+        switch self.value.compare(date) {
         case .orderedAscending: break
-        case .orderedDescending, .orderedSame: throw error ?? verifyError
+        case .orderedDescending, .orderedSame: throw error ?? self.verifyError
         }
     }
 }
 
 private extension JWTClaim where Value == String {
     func verify(isEqualTo string: String, or error: Error? = nil) throws {
-        guard value == string else { throw error ?? verifyError }
+        guard self.value == string else { throw error ?? self.verifyError }
     }
 }
 
