@@ -41,3 +41,9 @@ extension User {
         return children(\.userID)
     }
 }
+
+extension User {
+    var purchasedOrders: Children<User, PurchasedOrder> {
+        return children(\.userID)
+    }
+}

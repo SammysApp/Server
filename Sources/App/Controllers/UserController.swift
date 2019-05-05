@@ -43,6 +43,13 @@ final class UserController {
         }.flatMap { try $0.outstandingOrders.query(on: req).all() }
     }
     
+    private func getPurchasedOrders(_ req: Request) throws -> Future<[PurchasedOrder]> {
+        return try verifier.verify(req).flatMap { uid in
+            try req.parameters.next(User.self)
+                .guard({ $0.uid == uid }, else: Abort(.unauthorized))
+        }.flatMap { try $0.purchasedOrders.query(on: req).all() }
+    }
+    
     private func getCards(_ req: Request) throws -> Future<[CardResponseData]> {
         return try verifier.verify(req).flatMap { uid in
             try req.parameters.next(User.self)
@@ -213,6 +220,8 @@ extension UserController: RouteCollection {
         usersRouter.get(User.parameter, "constructedItems", use: getConstructedItems)
         // GET /users/:user/outstandingOrders
         usersRouter.get(User.parameter, "outstandingOrders", use: getOutstandingOrders)
+        // GET /users/:user/purchasedOrders
+        usersRouter.get(User.parameter, "purchasedOrders", use: getPurchasedOrders)
         // GET /users/:user/cards
         usersRouter.get(User.parameter, "cards", use: getCards)
         
