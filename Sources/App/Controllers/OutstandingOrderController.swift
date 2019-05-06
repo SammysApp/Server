@@ -8,8 +8,16 @@ final class OutstandingOrderController {
     // MARK: - GET
     private func getOne(_ req: Request) throws -> Future<OutstandingOrderResponseData> {
         return try req.parameters.next(OutstandingOrder.self)
-            .flatMap { try self.verified($0, req: req) }
-            .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
+            .flatMap { try self.verified($0, req: req) }.then { outstandingOrder in
+                let currentDate = Date()
+                if let date = outstandingOrder.preparedForDate {
+                    if date <= currentDate {
+                        outstandingOrder.preparedForDate = nil
+                        return outstandingOrder.update(on: req)
+                    }
+                }
+                return req.eventLoop.newSucceededFuture(result: outstandingOrder)
+            }.flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
     
     private func getConstructedItems(_ req: Request) throws -> Future<[ConstructedItemResponseData]> {

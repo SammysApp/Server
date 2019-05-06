@@ -7,6 +7,7 @@ final class PurchasedOrder: PostgreSQLUUIDModel {
     var userID: User.ID
     var transactionID: SquareTransaction.ID
     var totalPrice: Int
+    var paidTaxPrice: Int
     var purchasedDate: Date
     var preparedForDate: Date?
     var note: String?
@@ -17,6 +18,7 @@ final class PurchasedOrder: PostgreSQLUUIDModel {
          userID: User.ID,
          transactionID: SquareTransaction.ID,
          totalPrice: Int,
+         paidTaxPrice: Int,
          purchasedDate: Date,
          preparedForDate: Date? = nil,
          note: String? = nil,
@@ -26,6 +28,7 @@ final class PurchasedOrder: PostgreSQLUUIDModel {
         self.userID = userID
         self.transactionID = transactionID
         self.totalPrice = totalPrice
+        self.paidTaxPrice = paidTaxPrice
         self.purchasedDate = purchasedDate
         self.preparedForDate = preparedForDate
         self.note = note
@@ -44,6 +47,7 @@ extension PurchasedOrder: Migration {
             creator.field(for: \.userID)
             creator.field(for: \.transactionID)
             creator.field(for: \.totalPrice)
+            creator.field(for: \.paidTaxPrice)
             creator.field(for: \.purchasedDate)
             creator.field(for: \.preparedForDate)
             creator.field(for: \.note)

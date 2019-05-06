@@ -100,7 +100,9 @@ final class UserController {
                 guard userID == outstandingOrder.userID else { throw Abort(.unauthorized) }
                 return try self.charge(user: user, outstandingOrder: outstandingOrder, cardNonce: data.cardNonce, customerCardID: data.customerCardID, req: req)
                     .flatMap { try self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: user.requireID(), transaction: $0, conn: req).create(on: req) }
-                    .flatMap { try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: $0, conn: req).transform(to: $0) }
+                    .flatMap { try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: $0, conn: req)
+                        .then { self.detachItemsAndDelete(outstandingOrder, conn: req) }
+                        .transform(to: $0) }
                     .flatMap { try self.makePurchasedOrderResponseData(purchasedOrder: $0, conn: req) }
                     .do { do { try SessionController.default.send(self.dataEncoder.encode($0)) } catch { print(error.localizedDescription) } }
             }
@@ -120,9 +122,10 @@ final class UserController {
     private func charge(user: User, outstandingOrder: OutstandingOrder, cardNonce: String? = nil, customerCardID: String? = nil, req: Request) throws -> Future<SquareTransaction> {
         let idempotencyKey = UUID().uuidString
         return try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
-            try self.squareAPIManager.charge(
+            let amount = totalPrice + self.makeTaxPrice(price: totalPrice)
+            return try self.squareAPIManager.charge(
                 locationID: AppConstants.Square.locationID,
-                data: .init(idempotencyKey: idempotencyKey, amountMoney: .init(amount: totalPrice, currency: .usd), cardNonce: cardNonce, customerCardID: customerCardID, customerID: user.customerID),
+                data: .init(idempotencyKey: idempotencyKey, amountMoney: .init(amount: amount, currency: .usd), cardNonce: cardNonce, customerCardID: customerCardID, customerID: user.customerID),
                 client: req.client()
             )
         }
@@ -151,12 +154,22 @@ final class UserController {
             }
     }
     
+    private func detachItemsAndDelete(_ outstandingOrder: OutstandingOrder, conn: DatabaseConnectable) -> Future<Void> {
+        return outstandingOrder.constructedItems.detachAll(on: conn)
+            .then { outstandingOrder.delete(on: conn) }
+    }
+    
+    private func makeTaxPrice(price: Int) -> Int {
+        return Int((Double(price) * AppConstants.taxRateMultiplier).rounded())
+    }
+    
     private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
         return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
             PurchasedOrder(
                 userID: userID,
                 transactionID: transaction.id,
                 totalPrice: totalPrice,
+                paidTaxPrice: self.makeTaxPrice(price: totalPrice),
                 purchasedDate: Date(),
                 preparedForDate: outstandingOrder.preparedForDate,
                 note: outstandingOrder.note
