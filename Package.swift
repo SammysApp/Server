@@ -10,7 +10,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "App", dependencies: ["Vapor", "FluentPostgreSQL", "JWT"]),
-        .target(name: "Run", dependencies: ["App"]),
-        .testTarget(name: "AppTests", dependencies: ["App"])
+        .target(name: "Run", dependencies: ["App"])
 	]
 )
