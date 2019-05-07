@@ -3,7 +3,13 @@ import Fluent
 import FluentPostgreSQL
 
 final class StoreHoursController {
-    let calendar = Calendar(identifier: .gregorian)
+    let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        if let timeZone = TimeZone(identifier: Constants.timeZoneIdentifier) {
+            calendar.timeZone = timeZone
+        }
+        return calendar
+    }()
     
     let queryDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -12,6 +18,7 @@ final class StoreHoursController {
     }()
     
     private struct Constants {
+        static let timeZoneIdentifier = "America/New_York"
         static let queryDateFormat = "M-d-yyyy"
     }
     
