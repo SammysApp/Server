@@ -50,7 +50,7 @@ struct SquareAPIManager {
     
     private func makeHeaders(_ method: HTTPMethod) -> [HTTPHeader] {
         var headers = [
-            HTTPHeader(name: .authorization, value: .bearerAuthentication(AppSecrets.Square.accessToken)),
+            HTTPHeader(name: .authorization, value: .bearerAuthentication(squareAccessToken)),
             HTTPHeader(name: .accept, value: .json)
         ]
         switch method {

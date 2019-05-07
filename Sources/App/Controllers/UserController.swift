@@ -124,7 +124,7 @@ final class UserController {
         return try outstandingOrder.totalPrice(on: req).flatMap { totalPrice in
             let amount = totalPrice + self.makeTaxPrice(price: totalPrice)
             return try self.squareAPIManager.charge(
-                locationID: AppConstants.Square.locationID,
+                locationID: squareLocationID,
                 data: .init(idempotencyKey: idempotencyKey, amountMoney: .init(amount: amount, currency: .usd), cardNonce: cardNonce, customerCardID: customerCardID, customerID: user.customerID),
                 client: req.client()
             )

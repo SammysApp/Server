@@ -1,6 +1,10 @@
 import Vapor
 import FluentPostgreSQL
 
+let squareAccessToken: String = Environment.get(.squareAccessToken) ?? preconditionFailure(EnvironmentError.missingEnvironmentVariables.localizedDescription)
+
+let squareLocationID: String = Environment.get(.squareLocationID) ?? preconditionFailure(EnvironmentError.missingEnvironmentVariables.localizedDescription)
+
 /// Called before application initializes.
 public func configure(_ config: inout Config, _ env: inout Environment, _ services: inout Services) throws {
     // Register routes to the router.
@@ -25,11 +29,19 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     try services.register(FluentPostgreSQLProvider())
     
     // Configure PostgreSQL database.
+    guard let postgreSQLHostname = Environment.get(.postgreSQLHostname),
+        let postgreSQLPortString = Environment.get(.postgreSQLPort),
+        let postgreSQLPort = Int(postgreSQLPortString),
+        let postgreSQLDatabase = Environment.get(.postgreSQLDatabase),
+        let postgreSQLUsername = Environment.get(.postgreSQLUsername)
+        else { throw EnvironmentError.missingEnvironmentVariables }
+    
     let postgresConfig = PostgreSQLDatabaseConfig(
-        hostname: LocalConstants.PostgreSQL.hostname,
-        port: LocalConstants.PostgreSQL.port,
-        username: LocalConstants.PostgreSQL.username,
-        database: LocalConstants.PostgreSQL.database
+        hostname: postgreSQLHostname,
+        port: postgreSQLPort,
+        username: postgreSQLUsername,
+        database: postgreSQLDatabase,
+        password: Environment.get(.postgreSQLPassword)
     )
     let postgres = PostgreSQLDatabase(config: postgresConfig)
     
