@@ -30,11 +30,15 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     
     // Configure PostgreSQL database.
     guard let postgreSQLHostname = Environment.get(.postgreSQLHostname),
-        let postgreSQLPortString = Environment.get(.postgreSQLPort),
-        let postgreSQLPort = Int(postgreSQLPortString),
         let postgreSQLDatabase = Environment.get(.postgreSQLDatabase),
         let postgreSQLUsername = Environment.get(.postgreSQLUsername)
         else { throw EnvironmentError.missingEnvironmentVariables }
+    
+    var postgreSQLPort = AppConstants.PostgreSQL.defaultPort
+    if let envPostgreSQLPortString = Environment.get(.postgreSQLPort),
+        let envPostgreSQLPort = Int(envPostgreSQLPortString) {
+        postgreSQLPort = envPostgreSQLPort
+    }
     
     let postgresConfig = PostgreSQLDatabaseConfig(
         hostname: postgreSQLHostname,
