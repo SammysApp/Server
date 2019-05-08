@@ -189,14 +189,19 @@ final class UserController {
     }
     
     private func makeConstructedItemResponseData(constructedItem: ConstructedItem, conn: DatabaseConnectable) throws -> Future<ConstructedItemResponseData> {
-        return try constructedItem.totalPrice(on: conn).map { totalPrice in
-            return try ConstructedItemResponseData(
-                id: constructedItem.requireID(),
-                categoryID: constructedItem.categoryID,
-                userID: constructedItem.userID,
-                totalPrice: totalPrice,
-                isFavorite: constructedItem.isFavorite
-            )
+        return try constructedItem.name(on: conn)
+            .and(constructedItem.description(on: conn))
+            .and(constructedItem.totalPrice(on: conn)).map { result in
+                let ((name, description), totalPrice) = result
+                return try ConstructedItemResponseData(
+                    id: constructedItem.requireID(),
+                    categoryID: constructedItem.categoryID,
+                    userID: constructedItem.userID,
+                    name: name,
+                    description: description,
+                    totalPrice: totalPrice,
+                    isFavorite: constructedItem.isFavorite
+                )
         }
     }
     
@@ -277,6 +282,8 @@ private extension UserController {
         let id: ConstructedItem.ID
         let categoryID: Category.ID
         let userID: User.ID?
+        let name: String
+        let description: String
         let totalPrice: Int
         let isFavorite: Bool
     }
