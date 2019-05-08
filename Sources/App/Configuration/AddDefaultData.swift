@@ -117,21 +117,23 @@ struct AddDefaultData {
     private static func update(_ categoryItem: CategoryItem, with data: CategoryItemData, on conn: PostgreSQLConnection) throws -> Future<CategoryItem> {
         categoryItem.description = data.description
         categoryItem.price = data.price
+        categoryItem.minimumModifiers = data.minimumModifiers
+        categoryItem.maximumModifiers = data.maximumModifiers
         return categoryItem.save(on: conn)
     }
     
     // MARK: - Modifiers
-    private static func makeModifier(modifierData: ModifierData, parentCategoryItemID: CategoryItem.ID) -> Modifier {
+    private static func makeModifier(modifierData: ModifierData, categoryItemID: CategoryItem.ID) -> Modifier {
         return Modifier(
-            parentCategoryItemID: parentCategoryItemID,
+            categoryItemID: categoryItemID,
             name: modifierData.name,
             price: modifierData.price
         )
     }
     
-    private static func create(_ modifiersData: [ModifierData]?, with parentCategoryItemID: CategoryItem.ID, on conn: PostgreSQLConnection) -> Future<Void> {
+    private static func create(_ modifiersData: [ModifierData]?, with categoryItemID: CategoryItem.ID, on conn: PostgreSQLConnection) -> Future<Void> {
         return Future<Void>.andAll(
-            modifiersData?.map { makeModifier(modifierData: $0, parentCategoryItemID: parentCategoryItemID).create(on: conn).transform(to: ()) } ?? [],
+            modifiersData?.map { makeModifier(modifierData: $0, categoryItemID: categoryItemID).create(on: conn).transform(to: ()) } ?? [],
             eventLoop: conn.eventLoop
         )
     }
@@ -186,6 +188,8 @@ private extension AddDefaultData {
         let item: Item.ID
         let description: String?
         let price: Int?
+        var minimumModifiers: Int?
+        var maximumModifiers: Int?
         let modifiers: [ModifierData]?
     }
     

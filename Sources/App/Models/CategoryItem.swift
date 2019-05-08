@@ -14,6 +14,8 @@ final class CategoryItem: PostgreSQLUUIDPivot, ModifiablePivot {
     
     var description: String?
     var price: Int?
+    var minimumModifiers: Int?
+    var maximumModifiers: Int?
     
     init(_ category: Category, _ item: Item) throws {
         self.categoryID = try category.requireID()
@@ -28,6 +30,6 @@ extension CategoryItem: Content {}
 
 extension CategoryItem {
     var modifiers: Children<CategoryItem, Modifier> {
-        return children(\.parentCategoryItemID)
+        return children(\.categoryItemID)
     }
 }
