@@ -58,26 +58,26 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
     var migrations = MigrationConfig()
     
     migrations.add(model: StoreHours.self, database: .psql)
-    
-    migrations.add(migration: Availability.self, database: .psql)
-    migrations.add(migration: OrderProgress.self, database: .psql)
-    
     migrations.add(model: Category.self, database: .psql)
     migrations.add(model: Item.self, database: .psql)
     migrations.add(model: CategoryItem.self, database: .psql)
     migrations.add(model: Modifier.self, database: .psql)
-    
-    migrations.add(model: User.self, database: .psql)
+    migrations.add(model: Offer.self, database: .psql)
     
     migrations.add(model: ConstructedItem.self, database: .psql)
     migrations.add(model: ConstructedItemCategoryItem.self, database: .psql)
     migrations.add(model: ConstructedItemModifier.self, database: .psql)
     migrations.add(model: OutstandingOrder.self, database: .psql)
     migrations.add(model: OutstandingOrderConstructedItem.self, database: .psql)
+    migrations.add(model: OutstandingOrderOffer.self, database: .psql)
     migrations.add(model: PurchasedOrder.self, database: .psql)
     migrations.add(model: PurchasedConstructedItem.self, database: .psql)
     migrations.add(model: PurchasedConstructedItemCategoryItem.self, database: .psql)
+    migrations.add(model: PurchasedOrderOffer.self, database: .psql)
+    migrations.add(model: User.self, database: .psql)
     
+    migrations.add(migration: Availability.self, database: .psql)
+    migrations.add(migration: OrderProgress.self, database: .psql)
     migrations.add(migration: AddDefaultData.self, database: .psql)
     
     services.register(migrations)
