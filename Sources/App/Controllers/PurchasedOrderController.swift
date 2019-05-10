@@ -77,6 +77,7 @@ final class PurchasedOrderController {
             number: purchasedOrder.number,
             purchasedDate: purchasedOrder.purchasedDate,
             preparedForDate: purchasedOrder.preparedForDate,
+            note: purchasedOrder.note,
             progress: purchasedOrder.progress,
             user: user
         )
@@ -164,6 +165,7 @@ private extension PurchasedOrderController {
         let number: Int?
         let purchasedDate: Date
         let preparedForDate: Date?
+        let note: String?
         let progress: OrderProgress
         let user: User
     }
