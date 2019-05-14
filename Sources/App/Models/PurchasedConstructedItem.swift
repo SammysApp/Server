@@ -40,3 +40,8 @@ extension PurchasedConstructedItem {
 extension PurchasedConstructedItem {
     var categoryItems: Siblings<PurchasedConstructedItem, CategoryItem, PurchasedConstructedItemCategoryItem> { return siblings() }
 }
+
+
+extension PurchasedConstructedItem {
+    var modifers: Siblings<PurchasedConstructedItem, Modifier, PurchasedConstructedItemModifier> { return siblings() }
+}
