@@ -27,7 +27,7 @@ extension Modifier: Parameter {}
 extension Modifier: Migration {}
 
 extension Modifier {
-    var parentCategoryItem: Parent<Modifier, CategoryItem>? {
+    var categoryItem: Parent<Modifier, CategoryItem> {
         return parent(\.categoryItemID)
     }
 }

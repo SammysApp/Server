@@ -41,6 +41,19 @@ final class ConstructedItemController {
             }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
+    private func attachModifiers(_ req: Request, data: AttachModifiersRequestData) throws -> Future<ConstructedItemResponseData> {
+        return try req.parameters.next(ConstructedItem.self)
+            .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
+                Modifier.query(on: req).filter(\.id ~~ data.modifierIDs).all().flatMap { modifiers in
+                    constructedItem.modifiers.attachAll(modifiers, on: req)
+                        .and(Future<Void>.andAll(
+                            modifiers.map { modifier in modifier.categoryItem.get(on: req).then { constructedItem.categoryItems.attach($0, on: req) }.transform(to: ()) },
+                            eventLoop: req.eventLoop)
+                        )
+                }.transform(to: constructedItem)
+            }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
+    }
+    
     // MARK: - PUT
     private func update(_ req: Request, constructedItem: ConstructedItem) throws -> Future<ConstructedItemResponseData> {
         return try req.parameters.next(ConstructedItem.self).flatMap { existing in
@@ -76,6 +89,23 @@ final class ConstructedItemController {
                 try req.parameters.next(CategoryItem.self)
                     .then { constructedItem.categoryItems.detach($0, on: req) }
                     .transform(to: constructedItem)
+            }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
+    }
+    
+    private func detachModifier(_ req: Request) throws -> Future<ConstructedItemResponseData> {
+        return try req.parameters.next(ConstructedItem.self)
+            .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
+                try req.parameters.next(Modifier.self).then { modifier in
+                    constructedItem.modifiers.detach(modifier, on: req).flatMap {
+                        try constructedItem.modifiers.query(on: req)
+                            .filter(\.categoryItemID == modifier.categoryItemID).count()
+                            .and(modifier.categoryItem.get(on: req)).flatMap { count, categoryItem -> Future<Void> in
+                                if count == 0 && categoryItem.minimumModifiers != nil {
+                                    return constructedItem.categoryItems.detach(categoryItem, on: req)
+                                } else { return req.eventLoop.newSucceededFuture(result: ()) }
+                            }
+                    }
+                }.transform(to: constructedItem)
             }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
@@ -165,6 +195,8 @@ extension ConstructedItemController: RouteCollection {
         constructedItemsRouter.post(CreateConstructedItemRequestData.self, use: create)
         // POST /constructedItems/:constructedItem/items
         constructedItemsRouter.post(AttachCategoryItemsRequestData.self, at: ConstructedItem.parameter, "items", use: attachCategoryItems)
+        // POST /constructedItems/:constructedItem/modifiers
+        constructedItemsRouter.post(AttachModifiersRequestData.self, at: ConstructedItem.parameter, "modifiers", use: attachModifiers)
         
         // PUT /constructedItems/:constructedItem
         constructedItemsRouter.put(ConstructedItem.self, at: ConstructedItem.parameter, use: update)
@@ -174,6 +206,8 @@ extension ConstructedItemController: RouteCollection {
         
         // DELETE /constructedItems/:constructedItem/items/:categoryItem
         constructedItemsRouter.delete(ConstructedItem.parameter, "items", CategoryItem.parameter, use: detachCategoryItem)
+        // DELETE /constructedItems/:constructedItem/modifiers/:modifier
+        constructedItemsRouter.delete(ConstructedItem.parameter, "modifiers", Modifier.parameter, use: detachModifier)
     }
 }
 
@@ -191,6 +225,10 @@ private extension ConstructedItemController {
     
     struct AttachCategoryItemsRequestData: Content {
         let categoryItemIDs: [CategoryItem.ID]
+    }
+    
+    struct AttachModifiersRequestData: Content {
+        let modifierIDs: [Modifier.ID]
     }
 }
 
