@@ -25,6 +25,12 @@ final class ConstructedItemController {
             }.map(makeItemResponseDataArray)
     }
     
+    private func getModifiers(_ req: Request) throws -> Future<[Modifier]> {
+        return try req.parameters.next(ConstructedItem.self)
+            .flatMap { try self.verified($0, req: req) }
+            .flatMap { try $0.modifiers.query(on: req).all() }
+    }
+    
     // MARK: - POST
     private func create(_ req: Request, data: CreateConstructedItemRequestData) throws -> Future<ConstructedItemResponseData> {
         return try verified(data, req: req)
@@ -190,6 +196,8 @@ extension ConstructedItemController: RouteCollection {
         constructedItemsRouter.get(ConstructedItem.parameter, use: getOne)
         // GET /constructedItems/:constructedItem/items
         constructedItemsRouter.get(ConstructedItem.parameter, "items", use: getItems)
+        // GET /constructedItems/:constructedItem/modifiers
+        constructedItemsRouter.get(ConstructedItem.parameter, "modifiers", use: getModifiers)
         
         // POST /constructedItems
         constructedItemsRouter.post(CreateConstructedItemRequestData.self, use: create)
