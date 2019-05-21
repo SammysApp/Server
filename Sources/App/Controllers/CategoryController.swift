@@ -75,7 +75,9 @@ final class CategoryController {
                     name: item.name,
                     description: categoryItem.description,
                     price: categoryItem.price,
-                    isModifiable: isModifiable
+                    isModifiable: isModifiable,
+                    minimumModifiers: categoryItem.minimumModifiers,
+                    maximumModifiers: categoryItem.maximumModifiers
                 )
             }
     }
@@ -123,6 +125,8 @@ private extension CategoryController {
         let description: String?
         let price: Int?
         let isModifiable: Bool
+        let minimumModifiers: Int?
+        let maximumModifiers: Int?
     }
 }
 

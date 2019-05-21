@@ -92,9 +92,13 @@ final class ConstructedItemController {
     private func detachCategoryItem(_ req: Request) throws -> Future<ConstructedItemResponseData> {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
-                try req.parameters.next(CategoryItem.self)
-                    .then { constructedItem.categoryItems.detach($0, on: req) }
-                    .transform(to: constructedItem)
+                try req.parameters.next(CategoryItem.self).flatMap { categoryItem in
+                    try constructedItem.categoryItems.detach(categoryItem, on: req).and(
+                        constructedItem.modifiers.query(on: req)
+                            .filter(\.categoryItemID == categoryItem.requireID()).all()
+                            .flatMap { constructedItem.modifiers.detachAll($0, on: req) }
+                    )
+                }.transform(to: constructedItem)
             }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }
     }
     
@@ -102,7 +106,7 @@ final class ConstructedItemController {
         return try req.parameters.next(ConstructedItem.self)
             .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
                 try req.parameters.next(Modifier.self).then { modifier in
-                    constructedItem.modifiers.detach(modifier, on: req).flatMap {
+                    constructedItem.modifiers.detach(modifier, on: req).thenThrowing {
                         try constructedItem.modifiers.query(on: req)
                             .filter(\.categoryItemID == modifier.categoryItemID).count()
                             .and(modifier.categoryItem.get(on: req)).flatMap { count, categoryItem -> Future<Void> in
