@@ -46,9 +46,18 @@ extension ConstructedItem {
     }
     
     func description(on conn: DatabaseConnectable) throws -> Future<String> {
-        return try categoryItems.query(on: conn).join(\Item.id, to: \CategoryItem.itemID).decode(Item.self).all()
-            .map { items in items.map { $0.name } }
-            .map { $0.joined(separator: ", ") }
+        return try categoryItems.query(on: conn).join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self).all().flatMap { pairs -> Future<[String]> in
+            var itemDescriptions = [String]()
+            return try pairs.map { categoryItem, item in
+                var itemDescription = item.name
+                return try self.modifiers.query(on: conn).filter(\.categoryItemID == categoryItem.requireID()).all().do { modifiers in
+                    if !modifiers.isEmpty {
+                        itemDescription += " (" + modifiers.map { $0.name }.joined(separator: ", ") + ")"
+                    }
+                }.transform(to: itemDescription)
+                    .do { itemDescriptions.append($0) }.transform(to: ())
+            }.flatten(on: conn).transform(to: itemDescriptions)
+        }.map { $0.joined(separator: ", ") }
     }
 }
 

@@ -34,10 +34,7 @@ struct AddDefaultData {
     }
     
     private static func create(_ storeHoursData: [StoreHoursData], on conn: PostgreSQLConnection) -> Future<Void> {
-        return Future<Void>.andAll(
-            storeHoursData.map { makeStoreHours(storeHoursData: $0).create(on: conn).transform(to: ()) },
-            eventLoop: conn.eventLoop
-        )
+        return storeHoursData.map { makeStoreHours(storeHoursData: $0).create(on: conn).transform(to: ()) }.flatten(on: conn)
     }
     
     // MARK: - Items
@@ -51,10 +48,7 @@ struct AddDefaultData {
     }
     
     private static func create(_ itemsData: [ItemData], on conn: PostgreSQLConnection) -> Future<Void> {
-        return Future<Void>.andAll(
-            itemsData.map { makeItem(itemData: $0).create(on: conn).transform(to: ()) },
-            eventLoop: conn.eventLoop
-        )
+        return itemsData.map { makeItem(itemData: $0).create(on: conn).transform(to: ()) }.flatten(on: conn)
     }
     
     // MARK: - Categories
@@ -85,7 +79,7 @@ struct AddDefaultData {
         guard let futures = categoriesData?
             .map({ create($0, parentCategoryID: parentCategoryID, on: conn) })
             else { return .done(on: conn) }
-        return Future<Void>.andAll(futures, eventLoop: conn.eventLoop)
+        return futures.flatten(on: conn)
     }
     
     private static func create(_ categoryData: CategoryData, parentCategoryID: Category.ID? = nil, on conn: PostgreSQLConnection) -> Future<Void> {
@@ -96,10 +90,7 @@ struct AddDefaultData {
     
     private static func attach(_ itemIDs: [Item.ID]?, to category: Category, on conn: PostgreSQLConnection) -> Future<Void> {
         guard let ids = itemIDs else { return .done(on: conn) }
-        return Future<Void>.andAll(
-            ids.map { attach($0, to: category, on: conn) },
-            eventLoop: conn.eventLoop
-        )
+        return ids.map { attach($0, to: category, on: conn) }.flatten(on: conn)
     }
     
     private static func attach(_ itemID: Item.ID, to category: Category, on conn: PostgreSQLConnection) -> Future<Void> {
@@ -132,21 +123,16 @@ struct AddDefaultData {
     }
     
     private static func create(_ modifiersData: [ModifierData]?, with categoryItemID: CategoryItem.ID, on conn: PostgreSQLConnection) -> Future<Void> {
-        return Future<Void>.andAll(
-            modifiersData?.map { makeModifier(modifierData: $0, categoryItemID: categoryItemID).create(on: conn).transform(to: ()) } ?? [],
-            eventLoop: conn.eventLoop
-        )
+        return (modifiersData?.map { makeModifier(modifierData: $0, categoryItemID: categoryItemID).create(on: conn).transform(to: ()) } ?? []).flatten(on: conn)
     }
 }
 
 extension AddDefaultData: PostgreSQLMigration {
     static func prepare(on conn: PostgreSQLConnection) -> Future<Void> {
         do {
-            return Future<Void>.andAll([
-                create(try makeStoreHoursData(), on: conn),
-                create(try makeItemsData(), on: conn),
-                create(try makeCategoriesData(), on: conn)
-            ], eventLoop: conn.eventLoop)
+            return try [create(makeStoreHoursData(), on: conn),
+                        create(makeItemsData(), on: conn),
+                        create(makeCategoriesData(), on: conn)].flatten(on:  conn)
         }
         catch { return conn.future(error: error) }
     }

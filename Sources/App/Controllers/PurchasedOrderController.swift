@@ -103,10 +103,11 @@ final class PurchasedOrderController {
         )
     }
     
-    private func makeItemResponseData(categoryItem: CategoryItem, item: Item) throws -> ItemResponseData {
+    private func makeItemResponseData(categoryItem: CategoryItem, item: Item, modifiers: [Modifier]) throws -> ItemResponseData {
         return try ItemResponseData(
             id: item.requireID(),
-            name: item.name
+            name: item.name,
+            modifiers: modifiers
         )
     }
     
@@ -118,10 +119,15 @@ final class PurchasedOrderController {
                 try categories.map { category in
                     try purchasedConstructedItem.categoryItems.query(on: conn)
                         .filter(\.categoryID == category.requireID())
-                        .join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self)
-                        .all().map { try $0.map(self.makeItemResponseData) }.map { items in
-                            guard !items.isEmpty else { return }
-                            try categorizedItems.append(.init(category: self.makeCategoryResponseData(category: category), items: items))
+                        .join(\Item.id, to: \CategoryItem.itemID).alsoDecode(Item.self).all().flatMap { pairs in
+                            try pairs.map { categoryItem, item in
+                                try purchasedConstructedItem.modifers.query(on: conn)
+                                    .filter(\.categoryItemID == categoryItem.requireID()).all()
+                                    .map { try self.makeItemResponseData(categoryItem: categoryItem, item: item, modifiers: $0) }
+                            }.flatten(on: conn).map { items in
+                                guard !items.isEmpty else { return }
+                                try categorizedItems.append(.init(category: self.makeCategoryResponseData(category: category), items: items))
+                            }
                         }
                 }.flatten(on: conn)
             }.transform(to: categorizedItems)
@@ -184,6 +190,7 @@ private extension PurchasedOrderController {
     struct ItemResponseData: Content {
         let id: Item.ID
         let name: String
+        let modifiers: [Modifier]
     }
     
     struct CategorizedItemsResponseData: Content {

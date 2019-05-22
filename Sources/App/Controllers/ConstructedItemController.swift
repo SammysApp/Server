@@ -52,9 +52,13 @@ final class ConstructedItemController {
             .flatMap { try self.verified($0, req: req) }.flatMap { constructedItem in
                 Modifier.query(on: req).filter(\.id ~~ data.modifierIDs).all().flatMap { modifiers in
                     constructedItem.modifiers.attachAll(modifiers, on: req)
-                        .and(Future<Void>.andAll(
-                            modifiers.map { modifier in modifier.categoryItem.get(on: req).then { constructedItem.categoryItems.attach($0, on: req) }.transform(to: ()) },
-                            eventLoop: req.eventLoop)
+                        .and(try modifiers.map { modifier in
+                                try constructedItem.categoryItems.query(on: req)
+                                    .filter(\.id == modifier.categoryItemID).count().then { count -> Future<Void> in
+                                        guard count == 0 else { return req.eventLoop.newSucceededFuture(result: ()) }
+                                        return modifier.categoryItem.get(on: req).then { constructedItem.categoryItems.attach($0, on: req) }.transform(to: ())
+                                    }
+                            }.flatten(on: req)
                         )
                 }.transform(to: constructedItem)
             }.flatMap { try self.makeConstructedItemResponseData(constructedItem: $0, conn: req) }

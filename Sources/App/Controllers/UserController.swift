@@ -136,7 +136,7 @@ final class UserController {
             .flatMap { result in
                 try result.map { constructedItem, outstandingOrderConstructedItem in
                     try self.makePurchasedConstructedItem(constructedItem: constructedItem, outstandingOrderConstructedItem: outstandingOrderConstructedItem, purchasedOrder: purchasedOrder, conn: conn).create(on: conn)
-                        .flatMap { try self.attachCategoryItems(from: constructedItem, to: $0, conn: conn) }
+                        .flatMap { try self.attachCategoryItems(from: constructedItem, to: $0, conn: conn).and(self.attachModifiers(from: constructedItem, to: $0, conn: conn)).transform(to: ()) }
                 }.flatten(on: conn)
             }
     }
@@ -150,6 +150,19 @@ final class UserController {
                             pivot.paidPrice = categoryItem.price
                             return pivot.save(on: conn).transform(to: ())
                         }
+                }.flatten(on: conn)
+            }
+    }
+    
+    private func attachModifiers(from constructedItem: ConstructedItem, to purchasedConstructedItem: PurchasedConstructedItem, conn: DatabaseConnectable) throws -> Future<Void> {
+        return try constructedItem.modifiers.query(on: conn).all()
+            .flatMap { modifiers in
+                modifiers.map { modifier in
+                    purchasedConstructedItem.modifers.attach(modifier, on: conn)
+                        .flatMap { pivot in
+                            pivot.paidPrice = modifier.price
+                            return pivot.save(on: conn).transform(to: ())
+                    }
                 }.flatten(on: conn)
             }
     }
