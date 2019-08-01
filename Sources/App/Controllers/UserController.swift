@@ -100,10 +100,12 @@ final class UserController {
                 guard userID == outstandingOrder.userID else { throw Abort(.unauthorized) }
                 return try self.charge(user: user, outstandingOrder: outstandingOrder, cardNonce: data.cardNonce, customerCardID: data.customerCardID, req: req)
                     .flatMap { try self.makePurchasedOrder(outstandingOrder: outstandingOrder, userID: user.requireID(), transaction: $0, conn: req).create(on: req) }
-                    .flatMap { try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: $0, conn: req)
-                        .then { self.detachItemsAndDelete(outstandingOrder, conn: req) }
-                        .transform(to: $0) }
-                    .flatMap { try self.makePurchasedOrderResponseData(purchasedOrder: $0, conn: req) }
+                    .flatMap { purchasedOrder in
+                        try self.createAndAttachPurchasedConstructedItems(from: outstandingOrder, to: purchasedOrder, conn: req)
+                        .flatMap { try self.createAndAttachOffers(from: outstandingOrder, to: purchasedOrder, conn: req) }
+                        .then { self.detachSiblingsAndDelete(outstandingOrder, conn: req) }
+                        .transform(to: purchasedOrder)
+                    }.flatMap { try self.makePurchasedOrderResponseData(purchasedOrder: $0, conn: req) }
                     .do { do { try SessionController.default.send(self.dataEncoder.encode($0)) } catch { print(error.localizedDescription) } }
             }
     }
@@ -141,6 +143,19 @@ final class UserController {
             }
     }
     
+    private func createAndAttachOffers(from outstandingOrder: OutstandingOrder, to purchasedOrder: PurchasedOrder, conn: DatabaseConnectable) throws -> Future<Void> {
+        return try outstandingOrder.offers.query(on: conn).all().flatMap { offers in
+            offers.map { offer in
+                purchasedOrder.offers.attach(offer, on: conn).flatMap { purchasedOrderOffer in
+                    purchasedOrderOffer.name = offer.name
+                    purchasedOrderOffer.receivedDiscountPrice = offer.discountPrice
+                    purchasedOrderOffer.receivedDiscountPercent = offer.discountPercent
+                    return purchasedOrderOffer.save(on: conn).transform(to: ())
+                }
+            }.flatten(on: conn)
+        }
+    }
+    
     private func attachCategoryItems(from constructedItem: ConstructedItem, to purchasedConstructedItem: PurchasedConstructedItem, conn: DatabaseConnectable) throws -> Future<Void> {
         return try constructedItem.categoryItems.query(on: conn).all()
             .flatMap { categoryItems in
@@ -167,8 +182,9 @@ final class UserController {
             }
     }
     
-    private func detachItemsAndDelete(_ outstandingOrder: OutstandingOrder, conn: DatabaseConnectable) -> Future<Void> {
+    private func detachSiblingsAndDelete(_ outstandingOrder: OutstandingOrder, conn: DatabaseConnectable) -> Future<Void> {
         return outstandingOrder.constructedItems.detachAll(on: conn)
+            .then { outstandingOrder.offers.detachAll(on: conn) }
             .then { outstandingOrder.delete(on: conn) }
     }
     
@@ -177,12 +193,14 @@ final class UserController {
     }
     
     private func makePurchasedOrder(outstandingOrder: OutstandingOrder, userID: User.ID, transaction: SquareTransaction, conn: DatabaseConnectable) throws -> Future<PurchasedOrder> {
-        return try outstandingOrder.totalPrice(on: conn).map { totalPrice in
+        return try outstandingOrder.totalPrice(on: conn)
+            .and(outstandingOrder.totalDiscountPrice(on: conn)).map { totalPrice, discountPrice in
             PurchasedOrder(
                 userID: userID,
                 transactionID: transaction.id,
                 totalPrice: totalPrice,
-                paidTaxPrice: self.makeTaxPrice(price: totalPrice),
+                discountPrice: discountPrice,
+                taxPrice: self.makeTaxPrice(price: totalPrice),
                 purchasedDate: Date(),
                 preparedForDate: outstandingOrder.preparedForDate,
                 note: outstandingOrder.note

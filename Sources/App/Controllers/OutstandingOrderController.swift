@@ -30,6 +30,12 @@ final class OutstandingOrderController {
             }
     }
     
+    private func getOffers(_ req: Request) throws -> Future<[Offer]> {
+        return try req.parameters.next(OutstandingOrder.self)
+            .flatMap { try self.verified($0, req: req) }
+            .flatMap { try $0.offers.query(on: req).all() }
+    }
+    
     // MARK: - POST
     private func create(_ req: Request, data: CreateOutstandingOrderRequestData) throws -> Future<OutstandingOrderResponseData> {
         return try verified(data, req: req)
@@ -43,6 +49,18 @@ final class OutstandingOrderController {
             .and(ConstructedItem.query(on: req).filter(\.id ~~ data.ids).all())
             .then { $0.constructedItems.attachAll($1, on: req).transform(to: $0) }
             .flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
+    }
+    
+    private func attachOffer(_ req: Request) throws -> Future<OutstandingOrderResponseData> {
+        return try req.parameters.next(OutstandingOrder.self)
+            .flatMap { try self.verified($0, req: req) }.flatMap { outstandingOrder in
+                try req.parameters.next(Offer.self).flatMap { offer in
+                    try outstandingOrder.offers.query(on: req)
+                        .filter(\.id == offer.requireID()).count()
+                        .guard({ $0 == 0 }, else: Abort(.badRequest)).transform(to: ())
+                        .flatMap { outstandingOrder.offers.attach(offer, on: req) }
+                }.transform(to: outstandingOrder)
+            }.flatMap { try self.makeOutstandingOrderResponseData(outstandingOrder: $0, conn: req) }
     }
     
     // MARK: - PUT
@@ -148,11 +166,15 @@ extension OutstandingOrderController: RouteCollection {
         outstandingOrdersRouter.get(OutstandingOrder.parameter, use: getOne)
         // GET /outstandingOrders/:outstandingOrder/constructedItems
         outstandingOrdersRouter.get(OutstandingOrder.parameter, "constructedItems", use: getConstructedItems)
+        // GET /outstandingOrders/:outstandingOrder/offers
+        outstandingOrdersRouter.get(OutstandingOrder.parameter, "offers", use: getOffers)
         
         // POST /outstandingOrders
         outstandingOrdersRouter.post(CreateOutstandingOrderRequestData.self, use: create)
         // POST /outstandingOrders/:outstandingOrder/constructedItems
         outstandingOrdersRouter.post(AttachConstructedItemsRequestData.self, at: OutstandingOrder.parameter, "constructedItems", use: attachConstructedItems)
+        // POST /outstandingOrders/:outstandingOrder/offers/:offer
+        outstandingOrdersRouter.post(OutstandingOrder.parameter, "offers", Offer.parameter, use: attachOffer)
         
         // PUT /outstandingOrders/:outstandingOrder
         outstandingOrdersRouter.put(OutstandingOrder.self, at: OutstandingOrder.parameter, use: update)

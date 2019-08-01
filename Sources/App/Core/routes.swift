@@ -5,6 +5,9 @@ public func routes(_ router: Router) throws {
     let storeHoursController = StoreHoursController()
     try router.register(collection: storeHoursController)
     
+    let offerController = OfferController()
+    try router.register(collection: offerController)
+    
     let userController = UserController()
     try router.register(collection: userController)
     

@@ -41,7 +41,8 @@ extension OutstandingOrder {
 
 extension OutstandingOrder {
     func totalPrice(on conn: DatabaseConnectable) throws -> Future<Int> {
-        return try baseTotalPrice(on: conn)
+        return try baseTotalPrice(on: conn).and(totalDiscountPrice(on: conn))
+            .map { max($0 - $1, 0) }
     }
     
     func totalDiscountPrice(on conn: DatabaseConnectable) throws -> Future<Int> {
@@ -51,9 +52,8 @@ extension OutstandingOrder {
                 .compactMap { $0.discountPrice }.reduce(0, +)
             let totalDiscountPercent = availableOffers
                 .compactMap { $0.discountPercent }.reduce(0, +)
-            let totalDiscountPercentMultiplier = totalDiscountPercent/100
             return try self.baseTotalPrice(on: conn).map { totalPrice in
-                (totalPrice * totalDiscountPercentMultiplier) + totalDiscountPrice
+                Int(Double(totalPrice)/100 * Double(totalDiscountPercent).rounded()) + totalDiscountPrice
             }
         }
     }

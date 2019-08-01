@@ -13,8 +13,8 @@ final class PurchasedOrderOffer: PostgreSQLUUIDPivot, ModifiablePivot {
     var offerID: Offer.ID
     
     var name: String?
-    var recievedDiscountPrice: Int?
-    var recievedDiscountPercent: Int?
+    var receivedDiscountPrice: Int?
+    var receivedDiscountPercent: Int?
     
     init(_ purchasedOrder: PurchasedOrder, _ offer: Offer) throws {
         self.purchasedOrderID = try purchasedOrder.requireID()

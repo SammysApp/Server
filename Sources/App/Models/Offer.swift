@@ -24,4 +24,6 @@ final class Offer: PostgreSQLUUIDModel {
     }
 }
 
+extension Offer: Content {}
+extension Offer: Parameter {}
 extension Offer: Migration {}
